@@ -35,6 +35,7 @@ import {
   getStoriesForTaskTool,
   createTaskStoryTool
 } from './tools/story-tools.js';
+import { getProjectHierarchyTool } from './tools/hierarchy-tools.js';
 
 export const list_of_tools: Tool[] = [
   listWorkspacesTool,
@@ -62,6 +63,7 @@ export const list_of_tools: Tool[] = [
   setParentForTaskTool,
   getTasksForTagTool,
   getTagsForWorkspaceTool,
+  getProjectHierarchyTool,
 ];
 
 export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToolRequest) => Promise<CallToolResult> {
@@ -284,6 +286,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
         case "asana_get_tasks_for_section": {
           const { section_id, ...opts } = args;
           const response = await asanaClient.getTasksForSection(section_id, opts);
+          return {
+            content: [{ type: "text", text: JSON.stringify(response) }],
+          };
+        }
+
+        case "asana_get_project_hierarchy": {
+          const { project_id, ...opts } = args;
+          const response = await asanaClient.getProjectHierarchy(project_id, opts);
           return {
             content: [{ type: "text", text: JSON.stringify(response) }],
           };

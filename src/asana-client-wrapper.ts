@@ -330,4 +330,56 @@ export class AsanaClientWrapper {
       throw error;
     }
   }
+
+  // Metodă pentru obținerea structurii ierarhice complete a unui proiect
+  async getProjectHierarchy(projectId: string, opts: any = {}) {
+    try {
+      // Pasul 1: Obține informații despre proiect
+      const projectFields = "name,gid" + (opts.opt_fields_project ? `,${opts.opt_fields_project}` : "");
+      const project = await this.getProject(projectId, { opt_fields: projectFields });
+      
+      // Pasul 2: Obține secțiunile proiectului
+      const sectionFields = "name,gid" + (opts.opt_fields_sections ? `,${opts.opt_fields_sections}` : "");
+      const sections = await this.getProjectSections(projectId, { opt_fields: sectionFields });
+      
+      // Pasul 3: Pentru fiecare secțiune, obține task-urile
+      const sectionsWithTasks = await Promise.all(sections.map(async (section: any) => {
+        const taskFields = "name,gid,completed,resource_subtype" + (opts.opt_fields_tasks ? `,${opts.opt_fields_tasks}` : "");
+        const taskOpts: any = { opt_fields: taskFields };
+        
+        // Include sau exclude task-urile completate
+        if (opts.include_completed_tasks === false) {
+          taskOpts.completed_since = "now";
+        }
+        
+        const tasks = await this.getTasksForSection(section.gid, taskOpts);
+        
+        // Pasul 4: Pentru fiecare task, obține subtask-urile dacă există
+        const tasksWithSubtasks = await Promise.all(tasks.map(async (task: any) => {
+          // Verifică dacă are subtask-uri
+          if (task.num_subtasks && task.num_subtasks > 0) {
+            try {
+              const subtasks = await this.tasks.getSubtasksForTask(task.gid, { opt_fields: taskFields });
+              return { ...task, subtasks: subtasks.data };
+            } catch (error) {
+              console.error(`Error fetching subtasks for task ${task.gid}:`, error);
+              return { ...task, subtasks: [] };
+            }
+          }
+          return { ...task, subtasks: [] };
+        }));
+        
+        return { ...section, tasks: tasksWithSubtasks };
+      }));
+      
+      // Returneaza structura ierarhică completă
+      return {
+        project: project,
+        sections: sectionsWithTasks
+      };
+    } catch (error) {
+      console.error("Error in getProjectHierarchy:", error);
+      throw error;
+    }
+  }
 }
