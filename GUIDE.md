@@ -1,14 +1,16 @@
-## Structura de dezvoltare MCP Server Asana
+🤖
 
-### Fișiere cheie:
-- **src/asana-client-wrapper.ts** - Implementează metodele pentru API Asana
-- **src/tool-handler.ts** - Înregistrează și rutează tool-urile
-- **src/*-tools.ts** - Grupează tool-uri pe categorii (task-tools.ts, project-tools.ts)
-- **src/server.ts** - Server Express principal, endpoint-uri MCP
+## MCP Server Asana Development Structure
 
-### Pași pentru adăugarea unei funcționalități noi:
+### Key Files:
+- **src/asana-client-wrapper.ts** - Implements methods for the Asana API
+- **src/tool-handler.ts** - Registers and routes tools
+- **src/*-tools.ts** - Groups tools by categories (task-tools.ts, project-tools.ts)
+- **src/server.ts** - Main Express server, MCP endpoints
 
-1. **Implementează metoda în `asana-client-wrapper.ts`**
+### Steps for Adding a New Feature:
+
+1. **Implement the method in `asana-client-wrapper.ts`**
    ```typescript
    async methodName(param1: Type, param2: Type): Promise<ResponseType> {
      try {
@@ -20,35 +22,35 @@
    }
    ```
 
-2. **Definește tool-ul în fișierul *-tools.ts potrivit**
+2. **Define the tool in the appropriate *-tools.ts file**
    ```typescript
    export const toolName: MCPTool = {
      name: "asana_tool_name",
-     description: "Descriere clară a funcționalității",
+     description: "Clear description of the functionality",
      inputSchema: z.object({
-       required_param: z.string().describe("Descriere parametru"),
-       optional_param: z.string().optional().describe("Descriere parametru opțional")
+       required_param: z.string().describe("Parameter description"),
+       optional_param: z.string().optional().describe("Optional parameter description")
      })
    };
    ```
 
-3. **Înregistrează tool-ul în `tool-handler.ts`**
-   - Adaugă import pentru tool
-   - Adaugă la `list_of_tools`
-   - Implementează caz în `switch` din `tool_handler`
+3. **Register the tool in `tool-handler.ts`**
+   - Add import for the tool
+   - Add to `list_of_tools`
+   - Implement case in `switch` from `tool_handler`
 
-4. **Testează tool-ul**
+4. **Test the tool**
 
-### Pași administrativi:
+### Administrative Steps:
 
-1. **Build și actualizare versiune**
+1. **Build and version update**
    ```bash
-   # Actualizare versiune în package.json
-   # Actualizare CHANGELOG.md
+   # Update version in package.json
+   # Update CHANGELOG.md
    npm run build
    ```
 
-2. **Gestionare git**
+2. **Git management**
    ```bash
    git add .
    git commit -m "Add new tool: asana_tool_name"
@@ -57,16 +59,16 @@
    git push origin vX.Y.Z
    ```
 
-3. **Publicare npm**
+3. **Publish npm**
    ```bash
    npm publish
    ```
 
-4. **Actualizare README.md** dacă tool-ul este important
+4. **Update README.md** if the tool is important
 
-### Convenții:
-- Prefix tool-uri: `asana_`
-- Excepții cuprinzătoare
-- Testează fiecare nouă funcționalitate înainte de commit
-- Respectă stilul de cod existent
-- Folosește tipuri stricte (evită `any`) 
+### Conventions:
+- Prefix tools: `asana_`
+- Comprehensive exceptions
+- Test each new feature before committing
+- Adhere to existing code style
+- Use strict types (avoid `any`) 
