@@ -222,6 +222,22 @@ Another example:
         * offset (string): Offset token. An offset to the next page returned by the API.
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of tags in the workspace
+23. `asana_create_section_for_project`
+    * Create a new section in a project
+    * Required input:
+        * project_id (string): The project ID to create the section in
+        * name (string): Name of the section to create
+    * Optional input:
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: Created section information
+24. `asana_add_task_to_section`
+    * Add a task to a specific section in a project
+    * Required input:
+        * section_id (string): The section ID to add the task to
+        * task_id (string): The task ID to add to the section
+    * Optional input:
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: Operation result
 
 ## Prompts
 

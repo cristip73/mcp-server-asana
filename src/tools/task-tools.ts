@@ -430,3 +430,26 @@ export const getMultipleTasksByGidTool: Tool = {
   }
 };
 
+export const addTaskToSectionTool: Tool = {
+  name: "asana_add_task_to_section",
+  description: "Add a task to a specific section in a project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      section_id: {
+        type: "string",
+        description: "The section ID to add the task to"
+      },
+      task_id: {
+        type: "string",
+        description: "The task ID to add to the section"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include"
+      }
+    },
+    required: ["section_id", "task_id"]
+  }
+};
+

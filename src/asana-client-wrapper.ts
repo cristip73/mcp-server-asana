@@ -269,4 +269,26 @@ export class AsanaClientWrapper {
     const response = await this.tags.getTagsForWorkspace(workspace_gid, opts);
     return response.data;
   }
+
+  // Metodă nouă pentru crearea unei secțiuni într-un proiect
+  async createSectionForProject(projectId: string, name: string, opts: any = {}) {
+    const data = {
+      data: {
+        name
+      }
+    };
+    const response = await this.projects.createSectionForProject(projectId, data, opts);
+    return response.data;
+  }
+
+  // Metodă nouă pentru adăugarea unui task într-o secțiune
+  async addTaskToSection(sectionId: string, taskId: string, opts: any = {}) {
+    const data = {
+      data: {
+        task: taskId
+      }
+    };
+    const response = await this.tasks.addTaskForSection(sectionId, data, opts);
+    return response.data;
+  }
 }

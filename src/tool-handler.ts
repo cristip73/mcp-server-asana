@@ -6,7 +6,8 @@ import {
   searchProjectsTool,
   getProjectTool,
   getProjectTaskCountsTool,
-  getProjectSectionsTool
+  getProjectSectionsTool,
+  createSectionForProjectTool
 } from './tools/project-tools.js';
 import { 
   getProjectStatusTool,
@@ -20,7 +21,8 @@ import {
   createTaskTool,
   updateTaskTool,
   createSubtaskTool,
-  getMultipleTasksByGidTool
+  getMultipleTasksByGidTool,
+  addTaskToSectionTool
 } from './tools/task-tools.js';
 import { getTasksForTagTool, getTagsForWorkspaceTool } from './tools/tag-tools.js';
 import {
@@ -44,11 +46,12 @@ export const list_of_tools: Tool[] = [
   getProjectTool,
   getProjectTaskCountsTool,
   getProjectSectionsTool,
+  createSectionForProjectTool,
   createTaskStoryTool,
   addTaskDependenciesTool,
   addTaskDependentsTool,
   createSubtaskTool,
-  getMultipleTasksByGidTool,
+  addTaskToSectionTool,
   getProjectStatusTool,
   getProjectStatusesForProjectTool,
   createProjectStatusTool,
@@ -254,6 +257,22 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_get_tags_for_workspace": {
             const { workspace_gid, ...opts } = args;
             const response = await asanaClient.getTagsForWorkspace(workspace_gid, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_create_section_for_project": {
+            const { project_id, name, ...opts } = args;
+            const response = await asanaClient.createSectionForProject(project_id, name, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_add_task_to_section": {
+            const { section_id, task_id, ...opts } = args;
+            const response = await asanaClient.addTaskToSection(section_id, task_id, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

@@ -84,3 +84,26 @@ export const getProjectSectionsTool: Tool = {
     required: ["project_id"]
   }
 };
+
+export const createSectionForProjectTool: Tool = {
+  name: "asana_create_section_for_project",
+  description: "Create a new section in a project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID to create the section in"
+      },
+      name: {
+        type: "string",
+        description: "Name of the section to create"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include"
+      }
+    },
+    required: ["project_id", "name"]
+  }
+};
