@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+
+## [1.7.0] - 2024-07-02
+
+### Added
 - Implementarea corectă a endpoint-ului resources/list conform specificației MCP
 - Tool nou pentru obținerea task-urilor dintr-o secțiune (`asana_get_tasks_for_section`)
 - Tool nou pentru afișarea structurii ierarhice complete a unui proiect (`asana_get_project_hierarchy`) - livrează secțiuni, task-uri și subtask-uri într-o structură arborescentă
