@@ -343,7 +343,6 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
               data.followers = data.followers.map((id: string) => ({ gid: id }));
             }
             
-            console.log("Sending project creation request for workspace:", workspace_id);
             const response = await asanaClient.createProjectForWorkspace(workspace_id, data, { opt_fields });
             
             return {

@@ -509,8 +509,6 @@ export class AsanaClientWrapper {
       delete body.data.workspace_id;
       delete body.data.workspace; // Evităm duplicarea - am pus deja workspaceId ca workspace
       
-      console.log("Creating project with data:", JSON.stringify(body, null, 2));
-      
       // Folosim metoda standard createProject
       const response = await this.projects.createProject(body, opts);
       return response.data;
