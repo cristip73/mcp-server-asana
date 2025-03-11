@@ -8,7 +8,8 @@ import {
   getProjectTaskCountsTool,
   getProjectSectionsTool,
   createSectionForProjectTool,
-  createProjectForWorkspaceTool
+  createProjectForWorkspaceTool,
+  updateProjectTool
 } from './tools/project-tools.js';
 import { 
   getProjectStatusTool,
@@ -74,6 +75,7 @@ export const list_of_tools: Tool[] = [
   getTasksForTagTool,
   getTagsForWorkspaceTool,
   createProjectForWorkspaceTool,
+  updateProjectTool,
   getTeamsForUserTool,
   getTeamsForWorkspaceTool,
 ];
@@ -344,6 +346,33 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
             }
             
             const response = await asanaClient.createProjectForWorkspace(workspace_id, data, { opt_fields });
+            
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_update_project": {
+            const { project_id, ...projectData } = args;
+            
+            // Extragem opt_fields pentru opțiuni
+            const { opt_fields, ...restData } = projectData;
+            
+            // Pregătim datele pentru actualizare
+            const data = {
+              ...restData
+            };
+            
+            // Conversia array-urilor în formatul așteptat de API
+            if (data.members && Array.isArray(data.members)) {
+              data.members = data.members.map((id: string) => ({ gid: id }));
+            }
+            
+            if (data.followers && Array.isArray(data.followers)) {
+              data.followers = data.followers.map((id: string) => ({ gid: id }));
+            }
+            
+            const response = await asanaClient.updateProject(project_id, data, { opt_fields });
             
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],

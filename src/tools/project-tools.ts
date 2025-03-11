@@ -191,3 +191,80 @@ export const createProjectForWorkspaceTool: Tool = {
     required: ["workspace_id", "name"]
   }
 };
+
+export const updateProjectTool: Tool = {
+  name: "asana_update_project",
+  description: "Update details of an existing project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID to update"
+      },
+      name: {
+        type: "string",
+        description: "Updated name of the project"
+      },
+      public: {
+        type: "boolean",
+        description: "Whether the project is public to the organization"
+      },
+      archived: {
+        type: "boolean",
+        description: "Whether the project is archived"
+      },
+      color: {
+        type: "string",
+        description: "Color of the project (light-green, light-orange, light-blue, etc.)"
+      },
+      members: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs that are members of this project"
+      },
+      followers: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs that are followers of this project"
+      },
+      project_brief: {
+        type: "string",
+        description: "HTML-formatted string containing the description for the project brief"
+      },
+      layout: {
+        type: "string",
+        description: "The layout of the project (board, list, timeline, or calendar)"
+      },
+      default_view: {
+        type: "string",
+        description: "The default view of the project (list, board, calendar, timeline, or gantt)"
+      },
+      due_on: {
+        type: "string",
+        description: "The date on which this project is due (YYYY-MM-DD format)"
+      },
+      start_on: {
+        type: "string",
+        description: "The day on which work for this project begins (YYYY-MM-DD format)"
+      },
+      notes: {
+        type: "string",
+        description: "Free-form textual information associated with the project"
+      },
+      html_notes: {
+        type: "string",
+        description: "HTML-formatted notes for the project"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include"
+      }
+    },
+    required: ["project_id"]
+  }
+};

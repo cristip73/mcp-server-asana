@@ -523,4 +523,28 @@ export class AsanaClientWrapper {
       throw error;
     }
   }
+  
+  async updateProject(projectId: string, data: any, opts: any = {}) {
+    try {
+      // Pregătim datele pentru cerere
+      const body = {
+        data: {
+          ...data
+        }
+      };
+      
+      // Folosim metoda standard updateProject pentru a actualiza proiectul
+      const response = await this.projects.updateProject(projectId, body, opts);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error updating project: ${error}`);
+      
+      // Adăugăm mai multe detalii despre eroare pentru debugging
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      
+      throw error;
+    }
+  }
 }
