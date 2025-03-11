@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [1.6.2] - 2025-03-11
+
+### Fixed
+- Fixed accidental removal of getMultipleTasksByGidTool from tool list
+
 ## [1.6.1] - 2025-03-11
 
 ### Added
@@ -50,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Specify the repo url in the package.json so it shows on npmjs.com
 - Use standard format for bin location
 
-[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.1..HEAD
+[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.2..HEAD
+[1.6.2]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/cristip73/mcp-server-asana/compare/v1.5.2...v1.6.0
 [1.5.2]: https://github.com/cristip73/mcp-server-asana/compare/v1.5.1...v1.5.2
