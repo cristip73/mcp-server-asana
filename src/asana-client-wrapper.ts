@@ -287,7 +287,8 @@ export class AsanaClientWrapper {
   async addTaskToSection(sectionId: string, taskId: string, opts: any = {}) {
     const data = {
       data: {
-        task: taskId
+        task: taskId,
+        insert_before: null
       }
     };
     try {
@@ -305,7 +306,7 @@ export class AsanaClientWrapper {
           {},
           {},
           {},
-          { data: { task: taskId } },
+          { data: { task: taskId, insert_before: null } },
           ['token'],
           ['application/json'],
           ['application/json'],

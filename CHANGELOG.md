@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Rezolvat problema din funcționalitatea `asana_add_task_to_section` prin adăugarea unui mecanism de fallback pentru a gestiona erorile API
 
+### Changed
+- Îmbunătățit funcționalitatea `asana_add_task_to_section` pentru a adăuga task-uri întotdeauna la sfârșitul secțiunii în loc de început
+
 ## [1.6.3] - 2025-03-11
 
 ### Fixed
