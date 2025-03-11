@@ -238,6 +238,23 @@ Another example:
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Operation result
+25. `asana_create_project`
+    * Create a new project in a workspace
+    * Required input:
+        * workspace_id (string): The workspace ID to create the project in
+        * name (string): Name of the project to create
+    * Optional input:
+        * public (boolean): Whether the project is public to the organization (default: false)
+        * archived (boolean): Whether the project is archived (default: false)
+        * color (string): Color of the project (light-green, light-orange, light-blue, etc.)
+        * team_id (string): If the workspace for the project is an organization, specify the team GID
+        * layout (string): The layout of the project (board, list, timeline, or calendar)
+        * default_view (string): The default view of the project (list, board, calendar, timeline, or gantt)
+        * due_on (string): The date on which this project is due (YYYY-MM-DD format)
+        * start_on (string): The day on which work for this project begins (YYYY-MM-DD format)
+        * notes (string): Free-form textual information associated with the project
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: Created project information
 
 ## Prompts
 

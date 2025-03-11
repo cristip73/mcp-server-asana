@@ -284,13 +284,18 @@ export class AsanaClientWrapper {
 
   // Metodă nouă pentru crearea unei secțiuni într-un proiect
   async createSectionForProject(projectId: string, name: string, opts: any = {}) {
-    const data = {
-      data: {
-        name
-      }
-    };
-    const response = await this.projects.createSectionForProject(projectId, data, opts);
-    return response.data;
+    try {
+      const body = {
+        data: {
+          name
+        }
+      };
+      const response = await this.sections.createSectionForProject(body, projectId, opts);
+      return response.data;
+    } catch (error) {
+      console.error(`Error creating section for project: ${error}`);
+      throw error;
+    }
   }
 
   // Metodă nouă pentru adăugarea unui task într-o secțiune
@@ -389,6 +394,19 @@ export class AsanaClientWrapper {
       };
     } catch (error) {
       console.error("Error in getProjectHierarchy:", error);
+      throw error;
+    }
+  }
+
+  async createProjectForWorkspace(workspaceId: string, data: any, opts: any = {}) {
+    try {
+      const body = {
+        data: data
+      };
+      const response = await this.projects.createProjectForWorkspace(body, workspaceId, opts);
+      return response.data;
+    } catch (error) {
+      console.error(`Error creating project for workspace: ${error}`);
       throw error;
     }
   }

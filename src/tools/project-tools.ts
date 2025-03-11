@@ -107,3 +107,65 @@ export const createSectionForProjectTool: Tool = {
     required: ["project_id", "name"]
   }
 };
+
+export const createProjectForWorkspaceTool: Tool = {
+  name: "asana_create_project",
+  description: "Create a new project in a workspace",
+  inputSchema: {
+    type: "object",
+    properties: {
+      workspace_id: {
+        type: "string",
+        description: "The workspace ID to create the project in"
+      },
+      name: {
+        type: "string",
+        description: "Name of the project to create"
+      },
+      public: {
+        type: "boolean",
+        description: "Whether the project is public to the organization",
+        default: false
+      },
+      archived: {
+        type: "boolean",
+        description: "Whether the project is archived",
+        default: false
+      },
+      color: {
+        type: "string",
+        description: "Color of the project (light-green, light-orange, light-blue, etc.)"
+      },
+      team_id: {
+        type: "string",
+        description: "If the workspace for the project is an organization, specify the team GID"
+      },
+      layout: {
+        type: "string",
+        description: "The layout of the project (board, list, timeline, or calendar)",
+        default: "list"
+      },
+      default_view: {
+        type: "string",
+        description: "The default view of the project (list, board, calendar, timeline, or gantt)"
+      },
+      due_on: {
+        type: "string",
+        description: "The date on which this project is due (YYYY-MM-DD format)"
+      },
+      start_on: {
+        type: "string",
+        description: "The day on which work for this project begins (YYYY-MM-DD format)"
+      },
+      notes: {
+        type: "string",
+        description: "Free-form textual information associated with the project"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include"
+      }
+    },
+    required: ["workspace_id", "name"]
+  }
+};

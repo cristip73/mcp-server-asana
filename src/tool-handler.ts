@@ -7,7 +7,8 @@ import {
   getProjectTool,
   getProjectTaskCountsTool,
   getProjectSectionsTool,
-  createSectionForProjectTool
+  createSectionForProjectTool,
+  createProjectForWorkspaceTool
 } from './tools/project-tools.js';
 import { 
   getProjectStatusTool,
@@ -66,6 +67,7 @@ export const list_of_tools: Tool[] = [
   setParentForTaskTool,
   getTasksForTagTool,
   getTagsForWorkspaceTool,
+  createProjectForWorkspaceTool,
 ];
 
 export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToolRequest) => Promise<CallToolResult> {
@@ -304,6 +306,27 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_get_subtasks_for_task": {
             const { task_id, ...opts } = args;
             const response = await asanaClient.getSubtasksForTask(task_id, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_create_project": {
+            const { workspace_id, name, ...projectData } = args;
+            
+            // Extrage opt_fields dacă există
+            const { opt_fields, ...restData } = projectData;
+            
+            // Pregătește datele pentru proiect
+            const data = {
+              name,
+              ...restData
+            };
+            
+            // Dacă există team_id în date și proiectul este într-o organizație
+            // trimite-l ca parte din data, nu ca parametru separat
+            
+            const response = await asanaClient.createProjectForWorkspace(workspace_id, data, { opt_fields });
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
