@@ -13,25 +13,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 
+## [1.7.1] - 2024-07-03
+
+### Added
+- New tool for creating projects in a workspace (`asana_create_project`)
+- Updated documentation with comprehensive guides for developing new features
+
 ## [1.7.0] - 2024-07-02
 
 ### Added
-- Implementarea corectă a endpoint-ului resources/list conform specificației MCP
-- Tool nou pentru obținerea task-urilor dintr-o secțiune (`asana_get_tasks_for_section`)
-- Tool nou pentru afișarea structurii ierarhice complete a unui proiect (`asana_get_project_hierarchy`) - livrează secțiuni, task-uri și subtask-uri într-o structură arborescentă
-- Tool nou pentru obținerea subtask-urilor unui task (`asana_get_subtasks_for_task`)
+- Correct implementation of the resources/list endpoint according to the MCP specification
+- New tool for retrieving tasks from a section (`asana_get_tasks_for_section`)
+- New tool for displaying the complete hierarchical structure of a project (`asana_get_project_hierarchy`) - delivers sections, tasks, and subtasks in a tree structure
+- New tool for retrieving subtasks of a task (`asana_get_subtasks_for_task`)
 
 ### Fixed
-- Rezolvat problema din funcționalitatea `asana_add_task_to_section` prin adăugarea unui mecanism de fallback pentru a gestiona erorile API
-- Rezolvat problema de înregistrare a tool-urilor noi prin adăugarea cazurilor lipsă în handler-ul de tool-uri
+- Resolved the issue in the `asana_add_task_to_section` functionality by adding a fallback mechanism to handle API errors
+- Resolved the issue of registering new tools by adding missing cases in the tool handler
 
 ### Changed
-- Îmbunătățit funcționalitatea `asana_add_task_to_section` pentru a adăuga task-uri întotdeauna la sfârșitul secțiunii în loc de început
+- Improved the `asana_add_task_to_section` functionality to always add tasks at the end of the section instead of the beginning
 
 ## [1.6.3] - 2025-03-11
 
 ### Fixed
-- Funcționalitatea `asana_add_task_to_section` reparată, utilizând acum corect SectionsApi în loc de TasksApi
+- The `asana_add_task_to_section` functionality was fixed, now correctly using SectionsApi instead of TasksApi
 
 ## [1.6.2] - 2025-03-11
 
