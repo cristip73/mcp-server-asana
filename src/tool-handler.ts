@@ -51,6 +51,7 @@ export const list_of_tools: Tool[] = [
   addTaskDependenciesTool,
   addTaskDependentsTool,
   createSubtaskTool,
+  getMultipleTasksByGidTool,
   addTaskToSectionTool,
   getProjectStatusTool,
   getProjectStatusesForProjectTool,
