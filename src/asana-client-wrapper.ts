@@ -228,6 +228,16 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
+  async getSubtasksForTask(taskId: string, opts: any = {}) {
+    try {
+      const response = await this.tasks.getSubtasksForTask(taskId, opts);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getSubtasksForTask:", error);
+      throw error;
+    }
+  }
+
   async getProjectStatus(statusId: string, opts: any = {}) {
     const response = await this.projectStatuses.getProjectStatus(statusId, opts);
     return response.data;

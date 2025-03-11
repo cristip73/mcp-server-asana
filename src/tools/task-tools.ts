@@ -507,3 +507,22 @@ export const getProjectHierarchyTool: Tool = {
   }
 };
 
+export const getSubtasksForTaskTool: Tool = {
+  name: "asana_get_subtasks_for_task",
+  description: "Obține lista de subtask-uri pentru un task specific",
+  inputSchema: {
+    type: "object",
+    properties: {
+      task_id: {
+        type: "string",
+        description: "ID-ul task-ului pentru care se doresc subtask-urile"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Câmpuri opționale pentru subtask-uri (ex: 'name,notes,assignee,due_on,completed')"
+      }
+    },
+    required: ["task_id"]
+  }
+};
+

@@ -24,7 +24,8 @@ import {
   getMultipleTasksByGidTool,
   addTaskToSectionTool,
   getTasksForSectionTool,
-  getProjectHierarchyTool
+  getProjectHierarchyTool,
+  getSubtasksForTaskTool
 } from './tools/task-tools.js';
 import { getTasksForTagTool, getTagsForWorkspaceTool } from './tools/tag-tools.js';
 import {
@@ -57,6 +58,7 @@ export const list_of_tools: Tool[] = [
   addTaskToSectionTool,
   getTasksForSectionTool,
   getProjectHierarchyTool,
+  getSubtasksForTaskTool,
   getProjectStatusTool,
   getProjectStatusesForProjectTool,
   createProjectStatusTool,
@@ -294,6 +296,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_get_project_hierarchy": {
             const { project_id, ...opts } = args;
             const response = await asanaClient.getProjectHierarchy(project_id, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_subtasks_for_task": {
+            const { task_id, ...opts } = args;
+            const response = await asanaClient.getSubtasksForTask(task_id, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
