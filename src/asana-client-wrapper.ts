@@ -137,7 +137,9 @@ export class AsanaClientWrapper {
         // Handle resource_subtype if provided
         resource_subtype: data.resource_subtype || 'default_task',
         // Handle custom_fields if provided
-        custom_fields: data.custom_fields || {}
+        custom_fields: data.custom_fields || {},
+        // Asigură-te că task-ul este adăugat la sfârșitul listei
+        insert_before: null
       }
     };
     const response = await this.tasks.createTask(taskData);
@@ -256,7 +258,9 @@ export class AsanaClientWrapper {
   async createSubtask(parentTaskId: string, data: any, opts: any = {}) {
     const taskData = {
       data: {
-        ...data
+        ...data,
+        // Asigură-te că subtask-ul este adăugat la sfârșitul listei
+        insert_before: null
       }
     };
     const response = await this.tasks.createSubtaskForTask(taskData, parentTaskId, opts);
