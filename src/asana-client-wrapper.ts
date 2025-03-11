@@ -314,11 +314,32 @@ export class AsanaClientWrapper {
           name
         }
       };
-      const response = await this.sections.createSectionForProject(body, projectId, opts);
+      // Schimbăm ordinea parametrilor conform documentației Asana
+      const response = await this.sections.createSectionForProject(projectId, body, opts);
       return response.data;
     } catch (error) {
       console.error(`Error creating section for project: ${error}`);
-      throw error;
+      // Dacă obținem eroare, încercăm metoda alternativă folosind callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        const response = await client.callApi(
+          `/projects/${projectId}/sections`,
+          'POST',
+          { project_gid: projectId },
+          {},
+          {},
+          {},
+          { data: { name } },
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        return response.data;
+      } catch (fallbackError) {
+        console.error("Error in fallback method:", fallbackError);
+        throw fallbackError;
+      }
     }
   }
 
