@@ -290,7 +290,32 @@ export class AsanaClientWrapper {
         task: taskId
       }
     };
-    const response = await this.sections.addTaskForSection(sectionId, data, opts);
-    return response.data;
+    try {
+      const response = await this.sections.addTaskForSection(sectionId, data, opts);
+      return response.data;
+    } catch (error) {
+      console.error("Error in addTaskToSection:", error);
+      // Dacă obținem eroare, încercăm metoda alternativă folosind callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        const response = await client.callApi(
+          `/sections/${sectionId}/addTask`,
+          'POST',
+          { section_gid: sectionId },
+          {},
+          {},
+          {},
+          { data: { task: taskId } },
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        return response.data;
+      } catch (fallbackError) {
+        console.error("Error in fallback method:", fallbackError);
+        throw fallbackError;
+      }
+    }
   }
 }
