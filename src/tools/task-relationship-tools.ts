@@ -79,3 +79,25 @@ export const setParentForTaskTool: Tool = {
     required: ["task_id", "data"]
   }
 };
+
+export const addFollowersToTaskTool: Tool = {
+  name: "asana_add_followers_to_task",
+  description: "Add followers to a task",
+  inputSchema: {
+    type: "object",
+    properties: {
+      task_id: {
+        type: "string",
+        description: "The task ID to add followers to"
+      },
+      followers: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user IDs to add as followers to the task"
+      }
+    },
+    required: ["task_id", "followers"]
+  }
+};

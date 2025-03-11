@@ -154,21 +154,27 @@ Another example:
         * assignee (string): Assignee (can be 'me' or a user ID)
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Created subtask information
-15. `asana_get_multiple_tasks_by_gid`
+15. `asana_add_followers_to_task`
+    * Add followers to a task
+    * Required input:
+        * task_id (string): The task ID to add followers to
+        * followers (array of strings): Array of user IDs to add as followers to the task
+    * Returns: Updated task information
+16. `asana_get_multiple_tasks_by_gid`
     * Get detailed information about multiple tasks by their GIDs (maximum 25 tasks)
     * Required input:
         * task_ids (array of strings or comma-separated string): Task GIDs to retrieve (max 25)
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of detailed task information
-16. `asana_get_project_status`
+17. `asana_get_project_status`
     * Get a project status update
     * Required input:
         * project_status_gid (string): The project status GID to retrieve
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Project status information
-17. `asana_get_project_statuses`
+18. `asana_get_project_statuses`
     * Get all status updates for a project
     * Required input:
         * project_gid (string): The project GID to get statuses for
@@ -177,7 +183,7 @@ Another example:
         * offset (string): Pagination offset token
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of project status updates
-18. `asana_create_project_status`
+19. `asana_create_project_status`
     * Create a new status update for a project
     * Required input:
         * project_gid (string): The project GID to create the status for
@@ -188,12 +194,12 @@ Another example:
         * html_text (string): HTML formatted text for the status update
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Created project status information
-19. `asana_delete_project_status`
+20. `asana_delete_project_status`
     * Delete a project status update
     * Required input:
         * project_status_gid (string): The project status GID to delete
     * Returns: Deletion confirmation
-20. `asana_set_parent_for_task`
+21. `asana_set_parent_for_task`
     * Set the parent of a task and position the subtask within the other subtasks of that parent
     * Required input:
         * task_id (string): The task ID to operate on
@@ -203,7 +209,7 @@ Another example:
         * insert_before (string): A subtask of the parent to insert the task before, or null to insert at the end of the list
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Updated task information
-21. `asana_get_tasks_for_tag`
+22. `asana_get_tasks_for_tag`
     * Get tasks for a specific tag
     * Required input:
         * tag_gid (string): The tag GID to retrieve tasks for
@@ -213,7 +219,7 @@ Another example:
         * limit (integer): The number of objects to return per page. The value must be between 1 and 100.
         * offset (string): An offset to the next page returned by the API.
     * Returns: List of tasks for the specified tag
-22. `asana_get_tags_for_workspace`
+23. `asana_get_tags_for_workspace`
     * Get tags in a workspace
     * Required input:
         * workspace_gid (string): Globally unique identifier for the workspace or organization
@@ -222,7 +228,7 @@ Another example:
         * offset (string): Offset token. An offset to the next page returned by the API.
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of tags in the workspace
-23. `asana_create_section_for_project`
+24. `asana_create_section_for_project`
     * Create a new section in a project
     * Required input:
         * project_id (string): The project ID to create the section in
@@ -230,7 +236,7 @@ Another example:
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Created section information
-24. `asana_add_task_to_section`
+25. `asana_add_task_to_section`
     * Add a task to a specific section in a project
     * Required input:
         * section_id (string): The section ID to add the task to
@@ -238,7 +244,7 @@ Another example:
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Operation result
-25. `asana_create_project`
+26. `asana_create_project`
     * Create a new project in a workspace
     * Required input:
         * workspace_id (string): The workspace ID to create the project in
@@ -255,14 +261,14 @@ Another example:
         * notes (string): Free-form textual information associated with the project
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Created project information
-26. `asana_get_teams_for_user`
+27. `asana_get_teams_for_user`
     * Get teams to which the user has access
     * Required input:
         * user_gid (string): The user GID to get teams for. Use 'me' to get teams for the current user.
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of teams the user has access to
-27. `asana_get_teams_for_workspace`
+28. `asana_get_teams_for_workspace`
     * Get teams in a workspace
     * Required input:
         * workspace_gid (string): The workspace GID to get teams for

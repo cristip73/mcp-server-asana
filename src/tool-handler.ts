@@ -32,7 +32,8 @@ import { getTasksForTagTool, getTagsForWorkspaceTool } from './tools/tag-tools.j
 import {
   addTaskDependenciesTool,
   addTaskDependentsTool,
-  setParentForTaskTool
+  setParentForTaskTool,
+  addFollowersToTaskTool
 } from './tools/task-relationship-tools.js';
 import {
   getStoriesForTaskTool,
@@ -58,6 +59,7 @@ export const list_of_tools: Tool[] = [
   createTaskStoryTool,
   addTaskDependenciesTool,
   addTaskDependentsTool,
+  addFollowersToTaskTool,
   createSubtaskTool,
   getMultipleTasksByGidTool,
   addTaskToSectionTool,
@@ -360,6 +362,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_get_teams_for_workspace": {
             const { workspace_gid, ...opts } = args;
             const response = await asanaClient.getTeamsForWorkspace(workspace_gid, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_add_followers_to_task": {
+            const { task_id, followers } = args;
+            const response = await asanaClient.addFollowersToTask(task_id, followers);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

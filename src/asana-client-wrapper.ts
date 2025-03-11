@@ -217,6 +217,42 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
+  // Metoda nouă pentru adăugarea de followers la un task
+  async addFollowersToTask(taskId: string, followers: string[]) {
+    try {
+      const body = {
+        data: {
+          followers: followers
+        }
+      };
+      const response = await this.tasks.addFollowersForTask(body, taskId);
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding followers to task: ${error}`);
+      // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        const response = await client.callApi(
+          `/tasks/${taskId}/addFollowers`,
+          'POST',
+          { task_gid: taskId },
+          {},
+          {},
+          {},
+          { data: { followers: followers } },
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        return response.data;
+      } catch (fallbackError) {
+        console.error("Error in fallback method for adding followers:", fallbackError);
+        throw fallbackError;
+      }
+    }
+  }
+
   async createSubtask(parentTaskId: string, data: any, opts: any = {}) {
     const taskData = {
       data: {
