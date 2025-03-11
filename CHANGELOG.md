@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Implementarea corectă a endpoint-ului resources/list conform specificației MCP
 
 ## [1.6.3] - 2025-03-11
 

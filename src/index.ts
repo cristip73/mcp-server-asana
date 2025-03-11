@@ -8,6 +8,7 @@ import {
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
+  ListResourcesRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 import { AsanaClientWrapper } from './asana-client-wrapper.js'
 import { createPromptHandlers } from './prompt-handler.js';
@@ -29,7 +30,8 @@ async function main() {
     {
       capabilities: {
         tools: {},
-        prompts: {}
+        prompts: {},
+        resources: {}
       },
     }
   );
@@ -54,6 +56,14 @@ async function main() {
   // Add prompt handlers
   server.setRequestHandler(ListPromptsRequestSchema, promptHandlers.listPrompts);
   server.setRequestHandler(GetPromptRequestSchema, promptHandlers.getPrompt);
+  
+  // Add resources handler
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    console.error("Received ListResourcesRequest");
+    return {
+      resources: []  // Returnăm o listă goală deoarece nu folosim resurse în acest server
+    };
+  });
 
   const transport = new StdioServerTransport();
   console.error("Connecting server to transport...");
