@@ -1,6 +1,6 @@
 # MCP Server for Asana
 
-[![npm version](https://badge.fury.io/js/%40roychri%2Fmcp-server-asana.svg)](https://www.npmjs.com/package/@roychri/mcp-server-asana)
+[![npm version](https://badge.fury.io/js/%roychri%2Fmcp-server-asana.svg)](https://www.npmjs.com/package/@cristip73/mcp-server-asana)
 
 This Model Context Protocol server implementation of Asana allows you
 to talk to Asana API from MCP Client such as Anthropic's Claude
@@ -23,7 +23,7 @@ Example:
 
 Another example:
 
-![Claude Desktop Example](https://raw.githubusercontent.com/roychri/mcp-server-asana/main/mcp-server-asana-claude-example.png)
+![Claude Desktop Example](https://raw.githubusercontent.com/cristip73/mcp-server-asana/main/mcp-server-asana-claude-example.png)
 
 ## Tools
 
@@ -257,7 +257,7 @@ None
      "mcpServers": {
        "asana": {
          "command": "npx",
-         "args": ["-y", "@roychri/mcp-server-asana"],
+         "args": ["-y", "@cristip73/mcp-server-asana"],
          "env": {
            "ASANA_ACCESS_TOKEN": "your-asana-access-token"
          }
