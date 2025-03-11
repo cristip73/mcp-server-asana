@@ -10,10 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-## [1.6.2] - 2025-03-11
+## [1.6.3] - 2025-03-11
 
 ### Fixed
-- Fixed accidental removal of getMultipleTasksByGidTool from tool list
+- Funcționalitatea `asana_add_task_to_section` reparată, utilizând acum corect SectionsApi în loc de TasksApi
+
+## [1.6.2] - 2025-03-11
+
+### Added
+- Section management: create sections in projects
+- Task organization: move tasks between sections
 
 ## [1.6.1] - 2025-03-11
 
@@ -22,8 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for creating milestone/approval tasks in your projects
 - Custom fields support when creating and updating tasks
 - Enhanced subtask organization with ability to position subtasks in specific order
-- Section management: create sections in projects
-- Task organization: move tasks between sections
 
 ## [1.6.0] - 2025-02-08
 
@@ -55,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Specify the repo url in the package.json so it shows on npmjs.com
 - Use standard format for bin location
 
-[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.2..HEAD
+[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.3..HEAD
+[1.6.3]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/cristip73/mcp-server-asana/compare/v1.5.2...v1.6.0
