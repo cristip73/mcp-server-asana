@@ -534,7 +534,8 @@ export class AsanaClientWrapper {
       };
       
       // Folosim metoda standard updateProject pentru a actualiza proiectul
-      const response = await this.projects.updateProject(projectId, body, opts);
+      // Ordinea parametrilor este importantă: body, projectId, opts
+      const response = await this.projects.updateProject(body, projectId, opts);
       return response.data;
     } catch (error: any) {
       console.error(`Error updating project: ${error}`);
