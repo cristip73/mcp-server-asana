@@ -122,6 +122,10 @@ export const createProjectForWorkspaceTool: Tool = {
         type: "string",
         description: "Name of the project to create"
       },
+      team_id: {
+        type: "string",
+        description: "REQUIRED for organization workspaces: The team GID to share the project with"
+      },
       public: {
         type: "boolean",
         description: "Whether the project is public to the organization",
@@ -136,9 +140,23 @@ export const createProjectForWorkspaceTool: Tool = {
         type: "string",
         description: "Color of the project (light-green, light-orange, light-blue, etc.)"
       },
-      team_id: {
+      members: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs that are members of this project"
+      },
+      followers: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs that are followers of this project"
+      },
+      project_brief: {
         type: "string",
-        description: "If the workspace for the project is an organization, specify the team GID"
+        description: "HTML-formatted string containing the description for the project brief"
       },
       layout: {
         type: "string",
@@ -160,6 +178,10 @@ export const createProjectForWorkspaceTool: Tool = {
       notes: {
         type: "string",
         description: "Free-form textual information associated with the project"
+      },
+      html_notes: {
+        type: "string",
+        description: "HTML-formatted notes for the project"
       },
       opt_fields: {
         type: "string",

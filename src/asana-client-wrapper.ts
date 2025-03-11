@@ -8,6 +8,8 @@ export class AsanaClientWrapper {
   private projectStatuses: any;
   private tags: any;
   private sections: any;
+  private users: any;
+  private teams: any;
 
   constructor(token: string) {
     const client = Asana.ApiClient.instance;
@@ -21,6 +23,8 @@ export class AsanaClientWrapper {
     this.projectStatuses = new Asana.ProjectStatusesApi();
     this.tags = new Asana.TagsApi();
     this.sections = new Asana.SectionsApi();
+    this.users = new Asana.UsersApi();
+    this.teams = new Asana.TeamsApi();
   }
 
   async listWorkspaces(opts: any = {}) {
@@ -282,6 +286,26 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
+  async getTeamsForUser(user_gid: string, opts: any = {}) {
+    try {
+      const response = await this.teams.getTeamsForUser(user_gid, opts);
+      return response.data;
+    } catch (error) {
+      console.error(`Error in getTeamsForUser: ${error}`);
+      throw error;
+    }
+  }
+
+  async getTeamsForWorkspace(workspace_gid: string, opts: any = {}) {
+    try {
+      const response = await this.teams.getTeamsForWorkspace(workspace_gid, opts);
+      return response.data;
+    } catch (error) {
+      console.error(`Error in getTeamsForWorkspace: ${error}`);
+      throw error;
+    }
+  }
+
   // Metodă nouă pentru crearea unei secțiuni într-un proiect
   async createSectionForProject(projectId: string, name: string, opts: any = {}) {
     try {
@@ -400,13 +424,43 @@ export class AsanaClientWrapper {
 
   async createProjectForWorkspace(workspaceId: string, data: any, opts: any = {}) {
     try {
+      // Pregătim datele pentru cerere
+      const requestData = { ...data };
+      
+      // Redenumim team_id în team dacă există
+      if (requestData.team_id) {
+        requestData.team = requestData.team_id;
+        delete requestData.team_id;
+      }
+      
+      // Asana API are nevoie de parametrii corecți
       const body = {
-        data: data
+        data: {
+          // Includem workspace direct
+          workspace: workspaceId,
+          // Includem toate celelalte date dar fără workspace sau workspace_id
+          // deoarece sunt deja transmise prin parametrul workspaceId
+          ...requestData
+        }
       };
-      const response = await this.projects.createProjectForWorkspace(body, workspaceId, opts);
+      
+      // Eliminăm parametrii redundanți dacă există
+      delete body.data.workspace_id;
+      delete body.data.workspace; // Evităm duplicarea - am pus deja workspaceId ca workspace
+      
+      console.log("Creating project with data:", JSON.stringify(body, null, 2));
+      
+      // Folosim metoda standard createProject
+      const response = await this.projects.createProject(body, opts);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error creating project for workspace: ${error}`);
+      
+      // Adăugăm mai multe detalii despre eroare pentru debugging
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      
       throw error;
     }
   }

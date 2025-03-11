@@ -38,6 +38,10 @@ import {
   getStoriesForTaskTool,
   createTaskStoryTool
 } from './tools/story-tools.js';
+import { 
+  getTeamsForUserTool,
+  getTeamsForWorkspaceTool 
+} from './tools/user-tools.js';
 
 export const list_of_tools: Tool[] = [
   listWorkspacesTool,
@@ -68,6 +72,8 @@ export const list_of_tools: Tool[] = [
   getTasksForTagTool,
   getTagsForWorkspaceTool,
   createProjectForWorkspaceTool,
+  getTeamsForUserTool,
+  getTeamsForWorkspaceTool,
 ];
 
 export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToolRequest) => Promise<CallToolResult> {
@@ -314,19 +320,46 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_create_project": {
             const { workspace_id, name, ...projectData } = args;
             
-            // Extrage opt_fields dacă există
+            // Extragem opt_fields pentru opțiuni
             const { opt_fields, ...restData } = projectData;
             
-            // Pregătește datele pentru proiect
+            // Pregătim datele pentru proiect
             const data = {
               name,
               ...restData
             };
             
-            // Dacă există team_id în date și proiectul este într-o organizație
-            // trimite-l ca parte din data, nu ca parametru separat
+            // Verificăm dacă avem team_id și îl păstrăm, în asana-client-wrapper
+            // va fi redenumit automat în team
             
+            // Conversia array-urilor în formatul așteptat de API
+            if (data.members && Array.isArray(data.members)) {
+              data.members = data.members.map((id: string) => ({ gid: id }));
+            }
+            
+            if (data.followers && Array.isArray(data.followers)) {
+              data.followers = data.followers.map((id: string) => ({ gid: id }));
+            }
+            
+            console.log("Sending project creation request for workspace:", workspace_id);
             const response = await asanaClient.createProjectForWorkspace(workspace_id, data, { opt_fields });
+            
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_teams_for_user": {
+            const { user_gid, ...opts } = args;
+            const response = await asanaClient.getTeamsForUser(user_gid, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_teams_for_workspace": {
+            const { workspace_gid, ...opts } = args;
+            const response = await asanaClient.getTeamsForWorkspace(workspace_gid, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

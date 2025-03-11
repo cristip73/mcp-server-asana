@@ -243,11 +243,11 @@ Another example:
     * Required input:
         * workspace_id (string): The workspace ID to create the project in
         * name (string): Name of the project to create
+        * team_id (string): REQUIRED for organization workspaces - The team GID to share the project with
     * Optional input:
         * public (boolean): Whether the project is public to the organization (default: false)
         * archived (boolean): Whether the project is archived (default: false)
         * color (string): Color of the project (light-green, light-orange, light-blue, etc.)
-        * team_id (string): If the workspace for the project is an organization, specify the team GID
         * layout (string): The layout of the project (board, list, timeline, or calendar)
         * default_view (string): The default view of the project (list, board, calendar, timeline, or gantt)
         * due_on (string): The date on which this project is due (YYYY-MM-DD format)
@@ -255,6 +255,20 @@ Another example:
         * notes (string): Free-form textual information associated with the project
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: Created project information
+26. `asana_get_teams_for_user`
+    * Get teams to which the user has access
+    * Required input:
+        * user_gid (string): The user GID to get teams for. Use 'me' to get teams for the current user.
+    * Optional input:
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: List of teams the user has access to
+27. `asana_get_teams_for_workspace`
+    * Get teams in a workspace
+    * Required input:
+        * workspace_gid (string): The workspace GID to get teams for
+    * Optional input:
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: List of teams in the workspace
 
 ## Prompts
 
