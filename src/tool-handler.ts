@@ -283,6 +283,22 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
             };
           }
 
+          case "asana_get_tasks_for_section": {
+            const { section_id, ...opts } = args;
+            const response = await asanaClient.getTasksForSection(section_id, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_project_hierarchy": {
+            const { project_id, ...opts } = args;
+            const response = await asanaClient.getProjectHierarchy(project_id, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
