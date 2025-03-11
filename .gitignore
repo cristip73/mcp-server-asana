@@ -1,7 +1,12 @@
 _NOTES.md
-node_modules
-dist
+node_modules/
+dist/
 .aider*
 .env
 !.aider.conf.yml
 !.aiderignore
+.DS_Store
+*-debug.log
+*.tgz
+package-lock.json
+.idea/
