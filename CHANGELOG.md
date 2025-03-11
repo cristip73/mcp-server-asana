@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Implementarea corectă a endpoint-ului resources/list conform specificației MCP
+- Tool nou pentru obținerea task-urilor dintr-o secțiune (`asana_get_tasks_for_section`)
 
 ### Fixed
 - Rezolvat problema din funcționalitatea `asana_add_task_to_section` prin adăugarea unui mecanism de fallback pentru a gestiona erorile API

@@ -319,4 +319,15 @@ export class AsanaClientWrapper {
       }
     }
   }
+
+  // Metodă nouă pentru a obține task-urile dintr-o secțiune
+  async getTasksForSection(sectionId: string, opts: any = {}) {
+    try {
+      const response = await this.tasks.getTasksForSection(sectionId, opts);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getTasksForSection:", error);
+      throw error;
+    }
+  }
 }

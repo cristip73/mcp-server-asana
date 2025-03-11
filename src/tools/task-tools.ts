@@ -453,3 +453,30 @@ export const addTaskToSectionTool: Tool = {
   }
 };
 
+export const getTasksForSectionTool: Tool = {
+  name: "asana_get_tasks_for_section",
+  description: "Get all tasks from a specific section in a project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      section_id: {
+        type: "string",
+        description: "The section ID to get tasks from"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include (e.g., 'name,gid,completed,assignee,notes,subtasks')"
+      },
+      completed_since: {
+        type: "string",
+        description: "Only return tasks that are either incomplete or that have been completed since this time (ISO 8601 format)"
+      },
+      limit: {
+        type: "number",
+        description: "Number of results to return per page (1-100)"
+      }
+    },
+    required: ["section_id"]
+  }
+};
+
