@@ -121,7 +121,7 @@ export function getCustomFieldMetadataFromTask(task: any): any[] {
     return [];
   }
   
-  return task.custom_fields.map((field: any) => ({
+  return task.custom_fields.map(field => ({
     gid: field.gid,
     name: field.name,
     resource_subtype: field.resource_subtype,

@@ -12,8 +12,9 @@ export class AsanaClientWrapper {
   private sections: any;
   private users: any;
   private teams: any;
+  private defaultWorkspaceId?: string;
 
-  constructor(token: string) {
+  constructor(token: string, defaultWorkspaceId?: string) {
     const client = Asana.ApiClient.instance;
     client.authentications['token'].accessToken = token;
 
@@ -27,6 +28,7 @@ export class AsanaClientWrapper {
     this.sections = new Asana.SectionsApi();
     this.users = new Asana.UsersApi();
     this.teams = new Asana.TeamsApi();
+    this.defaultWorkspaceId = defaultWorkspaceId;
   }
 
   /**
@@ -65,6 +67,13 @@ export class AsanaClientWrapper {
 
   async listWorkspaces(opts: any = {}) {
     try {
+      // If DEFAULT_WORKSPACE_ID is set, only return that workspace
+      if (this.defaultWorkspaceId) {
+        console.error(`Using default workspace ID: ${this.defaultWorkspaceId}`);
+        const response = await this.workspaces.getWorkspace(this.defaultWorkspaceId, opts);
+        return [response.data]; // Return as an array with a single workspace
+      }
+
       // Extract pagination parameters
       const {
         auto_paginate = false,
@@ -101,17 +110,37 @@ export class AsanaClientWrapper {
     }
   }
 
-  async searchProjects(workspace: string, namePattern: string, archived: boolean = false, opts: any = {}) {
+  async searchProjects(workspace: string | undefined, namePattern: string, archived: boolean = false, opts: any = {}) {
+    // Use default workspace if not specified and available
+    if (!workspace && this.defaultWorkspaceId) {
+      workspace = this.defaultWorkspaceId;
+    }
+    
+    if (!workspace) {
+      throw new Error("No workspace specified and no default workspace ID set");
+    }
+    
     const response = await this.projects.getProjectsForWorkspace(workspace, {
       archived,
-      ...opts
+      opt_fields: opts.opt_fields || 'name,archived,created_at,modified_at,public,current_status',
     });
+    
+    // Filter projects based on the name pattern
     const pattern = new RegExp(namePattern, 'i');
     return response.data.filter((project: any) => pattern.test(project.name));
   }
 
-  async searchTasks(workspace: string, searchOpts: any = {}) {
+  async searchTasks(workspace: string | undefined, searchOpts: any = {}) {
     try {
+      // Use default workspace if not specified and available
+      if (!workspace && this.defaultWorkspaceId) {
+        workspace = this.defaultWorkspaceId;
+      }
+      
+      if (!workspace) {
+        throw new Error("No workspace specified and no default workspace ID set");
+      }
+      
       // Extract pagination parameters
       const { 
         auto_paginate = false, 
@@ -542,7 +571,16 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
-  async getTagsForWorkspace(workspace_gid: string, opts: any = {}) {
+  async getTagsForWorkspace(workspace_gid: string | undefined, opts: any = {}) {
+    // Use default workspace if not specified and available
+    if (!workspace_gid && this.defaultWorkspaceId) {
+      workspace_gid = this.defaultWorkspaceId;
+    }
+    
+    if (!workspace_gid) {
+      throw new Error("No workspace specified and no default workspace ID set");
+    }
+    
     const response = await this.tags.getTagsForWorkspace(workspace_gid, opts);
     return response.data;
   }
@@ -557,12 +595,96 @@ export class AsanaClientWrapper {
     }
   }
 
-  async getTeamsForWorkspace(workspace_gid: string, opts: any = {}) {
+  async getTeamsForWorkspace(workspace_gid: string | undefined, opts: any = {}) {
     try {
+      // Use default workspace if not specified and available
+      if (!workspace_gid && this.defaultWorkspaceId) {
+        workspace_gid = this.defaultWorkspaceId;
+      }
+      
+      if (!workspace_gid) {
+        throw new Error("No workspace specified and no default workspace ID set");
+      }
+      
       const response = await this.teams.getTeamsForWorkspace(workspace_gid, opts);
       return response.data;
     } catch (error) {
       console.error(`Error in getTeamsForWorkspace: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets a list of users in a workspace with support for pagination
+   * @param workspaceId The workspace ID to get users for
+   * @param opts Additional options including pagination parameters
+   * @returns List of users in the workspace
+   */
+  async getUsersForWorkspace(workspaceId: string | undefined, opts: any = {}) {
+    try {
+      // Use default workspace if not specified and available
+      if (!workspaceId && this.defaultWorkspaceId) {
+        workspaceId = this.defaultWorkspaceId;
+      }
+      
+      if (!workspaceId) {
+        throw new Error("No workspace specified and no default workspace ID set");
+      }
+      
+      // Extract pagination parameters
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit,
+        offset,
+        opt_fields,
+        ...otherOpts
+      } = opts;
+      
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts
+      };
+      
+      // Add default opt_fields if not specified
+      if (!opt_fields) {
+        searchParams.opt_fields = "name,email";
+      } else {
+        searchParams.opt_fields = opt_fields;
+      }
+      
+      // Add pagination parameters if provided
+      if (limit !== undefined) {
+        // Ensure limit is between 1 and 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      }
+      if (offset) searchParams.offset = offset;
+      
+      // Use the paginated results handler for more reliable pagination
+      return await this.handlePaginatedResults(
+        // Initial fetch function
+        () => this.users.getUsersForWorkspace(workspaceId, searchParams),
+        // Next page fetch function
+        (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
+        // Pagination options
+        { auto_paginate, max_pages }
+      );
+    } catch (error: any) {
+      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
+      
+      // Add detailed error handling for common issues
+      if (error.message?.includes('Not Found')) {
+        throw new Error(`Workspace with ID ${workspaceId} not found or inaccessible.`);
+      }
+      
+      if (error.message?.includes('Bad Request')) {
+        if (opts.limit && (opts.limit < 1 || opts.limit > 100)) {
+          throw new Error(`Invalid limit parameter: ${opts.limit}. Limit must be between 1 and 100.`);
+        }
+        
+        throw new Error(`Error retrieving users for workspace: ${error.message}. Check that all parameters are valid.`);
+      }
+      
       throw error;
     }
   }
@@ -654,6 +776,21 @@ export class AsanaClientWrapper {
 
   // Metodă pentru obținerea structurii ierarhice complete a unui proiect
   async getProjectHierarchy(projectId: string, opts: any = {}) {
+    /**
+     * Get the complete hierarchical structure of an Asana project
+     * Pagination features:
+     * 1. Auto pagination: Set auto_paginate=true to get all results automatically
+     * 2. Manual pagination: 
+     *    - First request: Set limit=N (without offset)
+     *    - Subsequent requests: Use limit=N with offset token from previous response
+     * 3. Pagination metadata is provided at multiple levels:
+     *    - Global: result.pagination_info
+     *    - Section level: section.pagination_info (contains next_offset token)
+     *    - Task level: task.subtasks_pagination_info (for subtasks pagination)
+     * 
+     * @param projectId - The project GID
+     * @param opts - Options including pagination params (limit, offset, auto_paginate)
+     */
     try {
       // Extrage opțiunile de paginare
       const { 
@@ -844,8 +981,17 @@ export class AsanaClientWrapper {
     }
   }
 
-  async createProjectForWorkspace(workspaceId: string, data: any, opts: any = {}) {
+  async createProjectForWorkspace(workspaceId: string | undefined, data: any, opts: any = {}) {
     try {
+      // Use default workspace if not specified and available
+      if (!workspaceId && this.defaultWorkspaceId) {
+        workspaceId = this.defaultWorkspaceId;
+      }
+      
+      if (!workspaceId) {
+        throw new Error("No workspace specified and no default workspace ID set");
+      }
+      
       // Pregătim datele pentru cerere
       const requestData = { ...data };
       
@@ -1056,148 +1202,6 @@ export class AsanaClientWrapper {
         }
         
         throw new Error(`Error retrieving tasks for project: ${error.message}. Check that all parameters are valid.`);
-      }
-      
-      throw error;
-    }
-  }
-
-  /**
-   * Get users in a workspace with pagination support
-   * This endpoint returns compact user records.
-   * Results are sorted alphabetically and limited to 2000 by default.
-   * 
-   * @param workspaceId Workspace GID
-   * @param opts Additional options including pagination options
-   * @returns List of users in the workspace with pagination info
-   */
-  async getUsersForWorkspace(workspaceId: string, opts: any = {}) {
-    try {
-      console.log(`Getting users for workspace ${workspaceId} with options:`, opts);
-      
-      // Extract pagination parameters
-      const { 
-        auto_paginate = false, 
-        max_pages = 10,
-        limit,
-        offset,
-        ...otherOpts
-      } = opts;
-      
-      // Build search parameters - start with other options
-      const searchParams: any = {
-        ...otherOpts
-      };
-      
-      // Force the use of a limit parameter even though the API doesn't explicitly mention it
-      // This is important for testing pagination behavior
-      if (limit !== undefined) {
-        // Ensure limit is between 1 and 100
-        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
-      } else {
-        // Default limit to ensure we can test pagination
-        searchParams.limit = 50;
-      }
-      
-      // Only add offset if it's valid - Asana requires a special token format
-      if (offset) {
-        // Validate that the offset token starts with 'eyJ'
-        if (typeof offset === 'string' && offset.startsWith('eyJ')) {
-          searchParams.offset = offset;
-          console.log(`Using offset token: ${offset.substring(0, 15)}...`);
-        } else {
-          console.warn(`Invalid offset format: ${offset}. Offset must be a valid pagination token from a previous response.`);
-        }
-      }
-      
-      console.log(`Final search parameters:`, searchParams);
-      
-      // Determine how to handle pagination
-      if (auto_paginate) {
-        console.log(`Auto-paginate set to true, fetching up to ${max_pages} pages`);
-        
-        // Use the paginated results handler to get all pages up to max_pages
-        const allUsers = await this.handlePaginatedResults(
-          // Initial fetch function
-          () => this.users.getUsersForWorkspace(workspaceId, searchParams),
-          // Next page fetch function
-          (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
-          // Pagination options
-          { auto_paginate, max_pages }
-        );
-        
-        console.log(`Retrieved ${allUsers.length} users across multiple pages`);
-        
-        // Add extra context information to each user
-        return allUsers.map(user => {
-          // Extract whether the user is active from workspace_memberships if available
-          if (user.workspace_memberships && user.workspace_memberships.length > 0) {
-            const membership = user.workspace_memberships.find((m: any) => m.workspace.gid === workspaceId);
-            if (membership) {
-              return {
-                ...user,
-                is_active: membership.is_active
-              };
-            }
-          }
-          return user;
-        });
-      } else {
-        // Just fetch a single page with pagination info
-        const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
-        const users = response.data || [];
-        
-        console.log(`Retrieved ${users.length} users in a single page call`);
-        
-        // Process the users to extract additional info
-        const processedUsers = users.map(user => {
-          // Extract whether the user is active from workspace_memberships if available
-          if (user.workspace_memberships && user.workspace_memberships.length > 0) {
-            const membership = user.workspace_memberships.find((m: any) => m.workspace.gid === workspaceId);
-            if (membership) {
-              return {
-                ...user,
-                is_active: membership.is_active
-              };
-            }
-          }
-          return user;
-        });
-        
-        // Create a response object with pagination information
-        const result = {
-          data: processedUsers,
-          pagination_info: {
-            has_more: !!response.next_page,
-            next_offset: response.next_page ? response.next_page.offset : null,
-            limit: searchParams.limit,
-            count: processedUsers.length,
-            next_page_url: response.next_page ? response.next_page.path : null
-          }
-        };
-        
-        console.log(`Pagination info:`, result.pagination_info);
-        
-        return result;
-      }
-    } catch (error: any) {
-      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
-      
-      // Add detailed error handling for common issues
-      if (error.message?.includes('Not Found')) {
-        throw new Error(`Workspace with ID ${workspaceId} not found or inaccessible.`);
-      }
-      
-      if (error.message?.includes('Bad Request')) {
-        // Check for common causes of Bad Request
-        if (opts.limit && (opts.limit < 1 || opts.limit > 100)) {
-          throw new Error(`Invalid limit parameter: ${opts.limit}. Limit must be between 1 and 100.`);
-        }
-        if (opts.offset && !(typeof opts.offset === 'string' && opts.offset.startsWith('eyJ'))) {
-          throw new Error(`Invalid offset parameter: ${opts.offset}. Offset must be a valid pagination token from a previous response.`);
-        }
-        
-        throw new Error(`Error retrieving users for workspace: ${error.message}. Check that all parameters are valid.`);
       }
       
       throw error;

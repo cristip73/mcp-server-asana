@@ -92,10 +92,11 @@ asana_update_task({
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of workspaces
+    * Note: If DEFAULT_WORKSPACE_ID is set, this will only return that workspace instead of fetching all workspaces
 2. `asana_search_projects`
     * Search for projects in Asana using name pattern matching
     * Required input:
-        * workspace (string): The workspace to search in
+        * workspace (string): The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)
         * name_pattern (string): Regular expression pattern to match project names
     * Optional input:
         * archived (boolean): Only return archived projects (default: false)
@@ -104,7 +105,7 @@ asana_update_task({
 3. `asana_search_tasks`
     * Search tasks in a workspace with advanced filtering options
     * Required input:
-        * workspace (string): The workspace to search in
+        * workspace (string): The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)
     * Optional input:
         * text (string): Text to search for in task names and descriptions
         * resource_subtype (string): Filter by task subtype (e.g. milestone)
@@ -282,7 +283,7 @@ asana_update_task({
 23. `asana_get_tags_for_workspace`
     * Get tags in a workspace
     * Required input:
-        * workspace_gid (string): Globally unique identifier for the workspace or organization
+        * workspace_gid (string): Globally unique identifier for the workspace or organization (optional if DEFAULT_WORKSPACE_ID is set)
     * Optional input:
         * limit (integer): Results per page. The number of objects to return per page. The value must be between 1 and 100.
         * offset (string): Offset token. An offset to the next page returned by the API.
@@ -307,7 +308,7 @@ asana_update_task({
 26. `asana_create_project`
     * Create a new project in a workspace
     * Required input:
-        * workspace_id (string): The workspace ID to create the project in
+        * workspace_id (string): The workspace ID to create the project in (optional if DEFAULT_WORKSPACE_ID is set)
         * name (string): Name of the project to create
         * team_id (string): REQUIRED for organization workspaces - The team GID to share the project with
     * Optional input:
@@ -331,10 +332,21 @@ asana_update_task({
 28. `asana_get_teams_for_workspace`
     * Get teams in a workspace
     * Required input:
-        * workspace_gid (string): The workspace GID to get teams for
+        * workspace_gid (string): The workspace GID to get teams for (optional if DEFAULT_WORKSPACE_ID is set)
     * Optional input:
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of teams in the workspace
+29. `asana_list_workspace_users`
+    * Get users in a workspace
+    * Required input:
+        * workspace_id (string): The workspace ID to get users for (optional if DEFAULT_WORKSPACE_ID is set)
+    * Optional input:
+        * limit (integer): Results per page (1-100)
+        * offset (string): Pagination offset token
+        * opt_fields (string): Comma-separated list of optional fields to include (defaults to "name,email")
+        * auto_paginate (boolean): Whether to automatically fetch all pages
+        * max_pages (integer): Maximum number of pages to fetch when auto_paginate is true
+    * Returns: List of users in the workspace
 
 ## Prompts
 
@@ -362,7 +374,14 @@ None
      - https://app.asana.com/0/my-apps
    - More details here: https://developers.asana.com/docs/personal-access-token
 
-3. **Configure Claude Desktop**:
+3. **Optional: Get your default workspace ID**:
+
+   - If you primarily work with one workspace, you can set a default workspace ID.
+   - Use the Asana API to list your workspaces, or go to your workspace in Asana and copy the ID from the URL.
+   - When you set a default workspace ID, you won't need to specify the workspace for each API call.
+   - Without a default workspace, the server will call `asana_list_workspaces` to get the list of available workspaces.
+
+4. **Configure Claude Desktop**:
    Add the following to your `claude_desktop_config.json`:
 
    ```json
@@ -372,7 +391,8 @@ None
          "command": "npx",
          "args": ["-y", "@cristip73/mcp-server-asana"],
          "env": {
-           "ASANA_ACCESS_TOKEN": "your-asana-access-token"
+           "ASANA_ACCESS_TOKEN": "your-asana-access-token",
+           "DEFAULT_WORKSPACE_ID": "your-default-workspace-id"
          }
        }
      }

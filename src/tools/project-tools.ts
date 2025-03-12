@@ -8,7 +8,7 @@ export const searchProjectsTool: Tool = {
     properties: {
       workspace: {
         type: "string",
-        description: "The workspace to search in"
+        description: "The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)"
       },
       name_pattern: {
         type: "string",
@@ -24,7 +24,7 @@ export const searchProjectsTool: Tool = {
         description: "Comma-separated list of optional fields to include"
       }
     },
-    required: ["workspace", "name_pattern"]
+    required: ["name_pattern"]
   }
 };
 
@@ -116,7 +116,7 @@ export const createProjectForWorkspaceTool: Tool = {
     properties: {
       workspace_id: {
         type: "string",
-        description: "The workspace ID to create the project in"
+        description: "The workspace ID to create the project in (optional if DEFAULT_WORKSPACE_ID is set)"
       },
       name: {
         type: "string",
@@ -188,7 +188,7 @@ export const createProjectForWorkspaceTool: Tool = {
         description: "Comma-separated list of optional fields to include"
       }
     },
-    required: ["workspace_id", "name"]
+    required: ["name"]
   }
 };
 

@@ -10,7 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-### Fixed
+### Improved
+
+
+## [1.8.3] - 2024-07-16
+
+### Added
+- Added support for using DEFAULT_WORKSPACE_ID environment variable as default workspace
+- Modified tools to use DEFAULT_WORKSPACE_ID when no workspace is specified
+- Updated `asana_list_workspaces` to return only the default workspace when DEFAULT_WORKSPACE_ID is set
+
+### Improved
+- Reduced the number of required tool calls by automatically using the default workspace
+- Improved error messages when no workspace is specified and no default is set
+- Added check to treat placeholder values like "your-default-workspace-id" as undefined
+
+
+## [1.8.2] - 2024-07-13
+
+### Added
+- Modified `asana_list_workspace_users` tool to include only name and email fields by default
+- Enhanced pagination support documentation for workspace users
+
+### Improved
+- Improved defaults for WorkspaceUsers function to include only essential fields
+- Updated descriptions and documentation for pagination parameters in user tools
 
 
 ## [1.8.1] - 2024-07-12

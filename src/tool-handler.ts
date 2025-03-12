@@ -134,7 +134,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_search_projects": {
             const { workspace, name_pattern, archived = false, ...opts } = args;
             const response = await asanaClient.searchProjects(
-              workspace,
+              workspace || undefined,
               name_pattern,
               archived,
               opts
@@ -146,7 +146,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
 
           case "asana_search_tasks": {
             const { workspace, ...searchOpts } = args;
-            const response = await asanaClient.searchTasks(workspace, searchOpts);
+            const response = await asanaClient.searchTasks(workspace || undefined, searchOpts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
@@ -308,7 +308,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
 
           case "asana_get_tags_for_workspace": {
             const { workspace_gid, ...opts } = args;
-            const response = await asanaClient.getTagsForWorkspace(workspace_gid, opts);
+            const response = await asanaClient.getTagsForWorkspace(workspace_gid || undefined, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
@@ -355,14 +355,13 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           }
 
           case "asana_create_project": {
-            const { workspace_id, name, ...projectData } = args;
+            const { workspace_id, ...projectData } = args;
             
             // Extragem opt_fields pentru opțiuni
             const { opt_fields, ...restData } = projectData;
             
             // Pregătim datele pentru proiect
             const data = {
-              name,
               ...restData
             };
             
@@ -378,7 +377,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
               data.followers = data.followers.map((id: string) => ({ gid: id }));
             }
             
-            const response = await asanaClient.createProjectForWorkspace(workspace_id, data, { opt_fields });
+            const response = await asanaClient.createProjectForWorkspace(workspace_id || undefined, data, { opt_fields });
             
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -443,7 +442,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
 
           case "asana_get_teams_for_workspace": {
             const { workspace_gid, ...opts } = args;
-            const response = await asanaClient.getTeamsForWorkspace(workspace_gid, opts);
+            const response = await asanaClient.getTeamsForWorkspace(workspace_gid || undefined, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
@@ -483,23 +482,10 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
 
           case "asana_list_workspace_users": {
             const { workspace_id, ...opts } = args;
-            try {
-              console.error("Getting users for workspace", workspace_id, "with options:", JSON.stringify(opts));
-              const response = await asanaClient.getUsersForWorkspace(workspace_id, opts);
-              
-              // Verificăm dacă răspunsul este un array valid înainte de serializare
-              if (!Array.isArray(response)) {
-                console.error("Invalid response format for getUsersForWorkspace:", response);
-                throw new Error("Răspunsul de la Asana API nu este în formatul așteptat.");
-              }
-              
-              return {
-                content: [{ type: "text", text: JSON.stringify(response) }],
-              };
-            } catch (error: any) {
-              console.error("Error in asana_list_workspace_users:", error);
-              throw new Error(`Eroare la listarea utilizatorilor din workspace: ${error.message}`);
-            }
+            const response = await asanaClient.getUsersForWorkspace(workspace_id || undefined, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
           }
 
           default:

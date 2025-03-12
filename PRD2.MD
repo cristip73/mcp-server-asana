@@ -41,6 +41,10 @@ Testing confirmed most of the initially identified issues and provided important
 
 > **Note**: Following additional testing of the features `asana_add_members_for_project` and `asana_add_followers_for_project`, we confirmed that they work correctly and with parameters in array format. These features can serve as models for future implementations, especially for adding tags and standardizing arrays in parameters.
 
+## 3. New Features Prioritized (10)
+
+> **Note**: Following additional testing of the features `asana_add_members_for_project` and `asana_add_followers_for_project`, we confirmed that they work correctly and with parameters in array format. These features can serve as models for future implementations, especially for adding tags and standardizing arrays in parameters.
+
 ### 3.0 Search Users
 - **Priority: High**
 - **Description**: Implementing functions for identifying and listing users in Asana
@@ -229,6 +233,7 @@ Testing confirmed most of the initially identified issues and provided important
     }
     ```
   - Update `tool-handler.ts` to handle the new tool
+
 
 ### 3.1 Creating Tasks in Specific Sections
 - **Priority: Critical**

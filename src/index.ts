@@ -15,6 +15,13 @@ import { createPromptHandlers } from './prompt-handler.js';
 
 async function main() {
   const asanaToken = process.env.ASANA_ACCESS_TOKEN;
+  let defaultWorkspaceId = process.env.DEFAULT_WORKSPACE_ID;
+
+  // Verificăm dacă defaultWorkspaceId este valoarea placeholder și îl tratăm ca nesetat
+  if (defaultWorkspaceId === "your-default-workspace-id" || defaultWorkspaceId === "your-default-workspace-id-optional") {
+    console.error("DEFAULT_WORKSPACE_ID is set to placeholder value, treating as undefined");
+    defaultWorkspaceId = undefined;
+  }
 
   if (!asanaToken) {
     console.error("Please set ASANA_ACCESS_TOKEN environment variable");
@@ -36,7 +43,7 @@ async function main() {
     }
   );
 
-  const asanaClient = new AsanaClientWrapper(asanaToken);
+  const asanaClient = new AsanaClientWrapper(asanaToken, defaultWorkspaceId);
 
   server.setRequestHandler(
     CallToolRequestSchema,

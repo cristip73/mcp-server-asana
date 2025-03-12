@@ -8,7 +8,7 @@ export const searchTasksTool: Tool = {
     properties: {
       workspace: {
         type: "string",
-        description: "The workspace to search in"
+        description: "The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)"
       },
       text: {
         type: "string",
@@ -237,7 +237,7 @@ export const searchTasksTool: Tool = {
 Example: { "12345.value": "high", "67890.contains": "urgent" }`
       }
     },
-    required: ["workspace"]
+    required: []
   }
 };
 

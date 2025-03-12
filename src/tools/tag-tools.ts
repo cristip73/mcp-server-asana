@@ -8,7 +8,7 @@ export const getTagsForWorkspaceTool: Tool = {
     properties: {
       workspace_gid: {
         type: "string",
-        description: "Globally unique identifier for the workspace or organization"
+        description: "Globally unique identifier for the workspace or organization (optional if DEFAULT_WORKSPACE_ID is set)"
       },
       limit: {
         type: "integer",
@@ -23,7 +23,7 @@ export const getTagsForWorkspaceTool: Tool = {
         description: "Comma-separated list of optional fields to include"
       }
     },
-    required: ["workspace_gid"]
+    required: []
   }
 };
 
