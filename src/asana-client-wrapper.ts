@@ -589,26 +589,28 @@ export class AsanaClientWrapper {
         ...otherOpts
       };
       
-      // Asana pentru acest endpoint necesită paginare explicită cu limit
-      // Dacă nu specificăm limit, API-ul va returna toate rezultatele (ignorând paginarea)
-      // Forțăm întotdeauna limita, chiar dacă nu este furnizată în opts
+      // IMPORTANT: Asana API pentru endpoint-ul get users necesită setarea explicită a limitei
+      // pentru a activa paginarea. Dacă nu este specificată, va returna toate rezultatele
+      // fără respectarea paginării. Vom seta întotdeauna o limită.
       if (limit !== undefined) {
         // Ensure limit is between 1 and 100
         searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
-      } else if (!auto_paginate) {
-        // Dacă nu avem auto_paginate, setăm o limită implicită pentru a forța paginarea
-        searchParams.limit = 100; // Limită implicită pentru a forța paginarea
+      } else {
+        // Dacă nu este specificată o limită, setăm o valoare implicită (diferită în funcție de auto_paginate)
+        searchParams.limit = auto_paginate ? 100 : 50; // Valoare implicită pentru a asigura paginarea corectă
       }
       
-      // Adăugăm offset doar dacă este specificat și pare valid
+      // Adăugăm offset doar dacă este specificat și pare valid (token-uri Asana încep cu 'eyJ')
       if (offset && typeof offset === 'string' && offset.startsWith('eyJ')) {
         searchParams.offset = offset;
       }
       
-      // Verificăm dacă vrem să obținem toate rezultatele sau doar o pagină
+      // Implementăm două fluxuri distincte pentru a diferenția clar comportamentul
       if (auto_paginate) {
-        // Folosim handlePaginatedResults pentru a obține toate rezultatele paginat
-        return await this.handlePaginatedResults(
+        // Flux 1: Auto-paginare - obține toate rezultatele automat
+        console.log(`Getting all users for workspace ${workspaceId} with auto pagination (limit=${searchParams.limit}, max_pages=${max_pages})`);
+        
+        const allUsers = await this.handlePaginatedResults(
           // Initial fetch function
           () => this.users.getUsersForWorkspace(workspaceId, searchParams),
           // Next page fetch function
@@ -616,43 +618,36 @@ export class AsanaClientWrapper {
           // Pagination options
           { auto_paginate, max_pages }
         );
+        
+        // Procesăm rezultatele pentru a adăuga is_active pentru compatibilitate
+        return allUsers.map((user: any) => this.processUserMemberships(user, workspaceId));
       } else {
-        // Pentru o singură pagină, facem cererea direct și returnăm rezultatele
-        // împreună cu informațiile de paginare
+        // Flux 2: Paginare manuală - obține doar o pagină cu informații de paginare
+        console.log(`Getting single page of users for workspace ${workspaceId} (limit=${searchParams.limit})`);
+        
         const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
         
-        // Adăugăm informații despre paginare la rezultat
-        if (response.data && Array.isArray(response.data)) {
-          // Transformăm rezultatul într-un format util
-          const result = response.data.map((user: any) => {
-            // Dacă utilizatorul are câmpul workspace_memberships, extragem statutul activ
-            if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
-              const thisMembership = user.workspace_memberships.find(
-                (m: any) => m.workspace && m.workspace.gid === workspaceId
-              );
-              
-              if (thisMembership) {
-                user.is_active = thisMembership.is_active || false;
-              }
-            }
-            return user;
-          });
-          
-          // Adăugăm informații de paginare
-          Object.defineProperty(result, 'pagination_info', {
-            value: {
-              has_more: !!response.next_page,
-              next_offset: response.next_page?.offset || null,
-              limit: searchParams.limit,
-              count: result.length
-            },
-            enumerable: true
-          });
-          
-          return result;
+        if (!response.data || !Array.isArray(response.data)) {
+          console.warn(`Unexpected response format from Asana API for getUsersForWorkspace: ${JSON.stringify(response)}`);
+          return [];
         }
         
-        return response.data || [];
+        // Procesăm utilizatorii pentru a adăuga flag-ul is_active
+        const processedUsers = response.data.map((user: any) => this.processUserMemberships(user, workspaceId));
+        
+        // Adăugăm informații de paginare la rezultat (proprietate non-enumerabilă pentru a evita serializarea)
+        Object.defineProperty(processedUsers, 'pagination_info', {
+          value: {
+            has_more: !!response.next_page,
+            next_offset: response.next_page?.offset || null,
+            limit: searchParams.limit,
+            count: processedUsers.length,
+            total_matched: undefined // Asana nu oferă această informație
+          },
+          enumerable: true // Facem enumerable pentru a fi inclus în rezultat
+        });
+        
+        return processedUsers;
       }
     } catch (error: any) {
       console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
@@ -672,6 +667,33 @@ export class AsanaClientWrapper {
       
       throw error;
     }
+  }
+  
+  /**
+   * Helper method to process user memberships and extract the is_active flag
+   * @param user User object from Asana API
+   * @param workspaceId Current workspace ID
+   * @returns User with is_active flag added
+   * @private
+   */
+  private processUserMemberships(user: any, workspaceId: string): any {
+    if (!user) return user;
+    
+    // Cream o copie pentru a nu modifica obiectul original
+    const processedUser = { ...user };
+    
+    // Extragem statutul activ din membership-uri dacă există
+    if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
+      const thisMembership = user.workspace_memberships.find(
+        (m: any) => m.workspace && m.workspace.gid === workspaceId
+      );
+      
+      if (thisMembership) {
+        processedUser.is_active = thisMembership.is_active || false;
+      }
+    }
+    
+    return processedUser;
   }
 
   // Metodă nouă pentru crearea unei secțiuni într-un proiect

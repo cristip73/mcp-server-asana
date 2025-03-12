@@ -40,7 +40,7 @@ export const getTeamsForWorkspaceTool: Tool = {
 
 export const getUsersForWorkspaceTool: Tool = {
   name: "asana_list_workspace_users",
-  description: "Get all users in a workspace or organization with pagination support. Returns is_active flag for each user where available.",
+  description: "Get all users in a workspace or organization with pagination support. Returns is_active flag for each user based on workspace membership.",
   inputSchema: {
     type: "object",
     properties: {
@@ -50,26 +50,26 @@ export const getUsersForWorkspaceTool: Tool = {
       },
       opt_fields: {
         type: "string",
-        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,resource_type,workspace_memberships')"
+        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,resource_type,workspace_memberships'). Include 'workspace_memberships' to get the is_active flag."
       },
       limit: {
         type: "number",
-        description: "Maximum number of results to return per page (1-100). Always specify a limit to enable pagination.",
+        description: "Maximum number of results to return per page (1-100). Default is 50 for manual pagination and 100 for auto_paginate=true.",
         minimum: 1,
         maximum: 100
       },
       offset: {
         type: "string",
-        description: "Pagination token from previous response's pagination_info.next_offset"
+        description: "Pagination token from previous response's pagination_info.next_offset. Use this to get the next page of results."
       },
       auto_paginate: {
         type: "boolean",
-        description: "If true, automatically fetches all pages and combines results (limited by max_pages). If false, returns a single page with pagination_info object.",
+        description: "Controls pagination behavior: if true, fetches all pages automatically (limited by max_pages); if false, returns a single page with pagination_info for manual paging.",
         default: false
       },
       max_pages: {
         type: "number",
-        description: "Maximum number of pages to fetch when auto_paginate is true",
+        description: "Maximum number of pages to fetch when auto_paginate=true (protection against fetching too many pages)",
         default: 10
       }
     },
@@ -77,22 +77,34 @@ export const getUsersForWorkspaceTool: Tool = {
   },
   examples: [
     {
-      name: "Get active users in a workspace",
+      name: "Get first page of users in a workspace",
       input: {
         workspace_id: "12345678",
-        opt_fields: "name,email,photo,workspace_memberships",
         limit: 20,
+        opt_fields: "name,email,photo,workspace_memberships",
         auto_paginate: false
-      }
+      },
+      description: "Returns the first 20 users from the workspace with pagination information for getting subsequent pages"
     },
     {
-      name: "Get all users with automatic pagination",
+      name: "Get next page of users",
       input: {
         workspace_id: "12345678",
-        opt_fields: "name,email",
+        limit: 20,
+        offset: "eyJ0eXAiOiJKV1QiLCJhbGciOi...",
+        opt_fields: "name,email,photo"
+      },
+      description: "Uses an offset token from a previous response to get the next page of results"
+    },
+    {
+      name: "Get all active users",
+      input: {
+        workspace_id: "12345678",
+        opt_fields: "name,email,workspace_memberships",
         auto_paginate: true,
         max_pages: 5
-      }
+      },
+      description: "Automatically fetches all users (up to max_pages limit) and returns them as a single list"
     }
   ]
 }; 
