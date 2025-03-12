@@ -608,7 +608,8 @@ export class AsanaClientWrapper {
       // Implementăm două fluxuri distincte pentru a diferenția clar comportamentul
       if (auto_paginate) {
         // Flux 1: Auto-paginare - obține toate rezultatele automat
-        console.log(`Getting all users for workspace ${workspaceId} with auto pagination (limit=${searchParams.limit}, max_pages=${max_pages})`);
+        // Folosim console.error în loc de console.log pentru a nu interfera cu rezultatul JSON
+        console.error(`Getting all users for workspace ${workspaceId} with auto pagination (limit=${searchParams.limit}, max_pages=${max_pages})`);
         
         const allUsers = await this.handlePaginatedResults(
           // Initial fetch function
@@ -623,12 +624,13 @@ export class AsanaClientWrapper {
         return allUsers.map((user: any) => this.processUserMemberships(user, workspaceId));
       } else {
         // Flux 2: Paginare manuală - obține doar o pagină cu informații de paginare
-        console.log(`Getting single page of users for workspace ${workspaceId} (limit=${searchParams.limit})`);
+        // Folosim console.error în loc de console.log pentru a nu interfera cu rezultatul JSON
+        console.error(`Getting single page of users for workspace ${workspaceId} (limit=${searchParams.limit})`);
         
         const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
         
         if (!response.data || !Array.isArray(response.data)) {
-          console.warn(`Unexpected response format from Asana API for getUsersForWorkspace: ${JSON.stringify(response)}`);
+          console.error(`Unexpected response format from Asana API for getUsersForWorkspace: ${JSON.stringify(response)}`);
           return [];
         }
         

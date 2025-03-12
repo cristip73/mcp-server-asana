@@ -48,7 +48,8 @@ import {
 } from './tools/story-tools.js';
 import { 
   getTeamsForUserTool,
-  getTeamsForWorkspaceTool 
+  getTeamsForWorkspaceTool,
+  getUsersForWorkspaceTool 
 } from './tools/user-tools.js';
 
 export const tools: Tool[] = [
@@ -86,7 +87,8 @@ export const tools: Tool[] = [
   getTeamsForUserTool,
   getTeamsForWorkspaceTool,
   addMembersForProjectTool,
-  addFollowersForProjectTool
+  addFollowersForProjectTool,
+  getUsersForWorkspaceTool
 ];
 
 // Exportăm și ca list_of_tools pentru compatibilitate cu index.ts
@@ -477,6 +479,27 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
+          }
+
+          case "asana_list_workspace_users": {
+            const { workspace_id, ...opts } = args;
+            try {
+              console.log("Getting users for workspace", workspace_id, "with options:", JSON.stringify(opts));
+              const response = await asanaClient.getUsersForWorkspace(workspace_id, opts);
+              
+              // Verificăm dacă răspunsul este un array valid înainte de serializare
+              if (!Array.isArray(response)) {
+                console.error("Invalid response format for getUsersForWorkspace:", response);
+                throw new Error("Răspunsul de la Asana API nu este în formatul așteptat.");
+              }
+              
+              return {
+                content: [{ type: "text", text: JSON.stringify(response) }],
+              };
+            } catch (error: any) {
+              console.error("Error in asana_list_workspace_users:", error);
+              throw new Error(`Eroare la listarea utilizatorilor din workspace: ${error.message}`);
+            }
           }
 
           default:
