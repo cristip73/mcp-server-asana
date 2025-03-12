@@ -589,147 +589,132 @@ export class AsanaClientWrapper {
         ...otherOpts
       };
       
-      // DEBUG: Mai întâi vom vedea în detaliu ce parametri primim
-      console.debug(`[DEBUG] getUsersForWorkspace called with parameters: workspaceId=${workspaceId}, auto_paginate=${auto_paginate}, limit=${limit}, offset=${offset ? offset.substring(0, 10) + '...' : 'undefined'}`);
-      
-      // Forțăm întotdeauna o limită pentru a activa paginarea
-      // Pentru endpoint-ul /users, Asana API limitează implicit la 100 de rezultate dacă nu specificăm limit
-      // și ignoră parametrul limit dacă nu este strict un număr valid
+      // Asana pentru acest endpoint necesită paginare explicită cu limit
+      // Dacă nu specificăm limit, API-ul va returna toate rezultatele (ignorând paginarea)
+      // Forțăm întotdeauna limita, chiar dacă nu este furnizată în opts
       if (limit !== undefined) {
-        // Asigurăm-ne că limita este un număr între 1 și 100
+        // Ensure limit is between 1 and 100
         searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
-        console.debug(`[DEBUG] Using explicit limit: ${searchParams.limit}`);
+        console.error(`Using specified limit: ${searchParams.limit}`);
       } else {
-        // Dacă nu avem un limit explicit, setăm unul explicit
-        // Pentru o limitare strictă folosim un număr mai mic (20)
-        searchParams.limit = auto_paginate ? 100 : 20;
-        console.debug(`[DEBUG] Using default limit: ${searchParams.limit} (auto_paginate=${auto_paginate})`);
+        // Dacă nu avem limită specificată, setăm o limită implicită pentru a forța paginarea
+        // Folosim o valoare mai mică (50) pentru a forța mai eficient paginarea
+        searchParams.limit = 50; // Limită implicită pentru a forța paginarea
+        console.error(`Using default limit: ${searchParams.limit}`);
       }
       
-      // Verificăm și validăm offset-ul dacă există
-      if (offset) {
-        if (typeof offset === 'string' && offset.startsWith('eyJ')) {
+      // Adăugăm offset doar dacă este specificat și pare valid
+      if (offset && typeof offset === 'string') {
+        if (offset.startsWith('eyJ')) {
           searchParams.offset = offset;
-          console.debug(`[DEBUG] Using offset token: ${offset.substring(0, 10)}...`);
+          console.error(`Using offset token: ${offset.substring(0, 15)}...`);
         } else {
-          console.warn(`[WARN] Invalid offset token provided: ${offset}. Offset tokens should start with 'eyJ'. Ignoring.`);
+          console.error(`Invalid offset format ignored: ${offset}`);
         }
       }
       
-      // În funcție de modul de paginare, gestionăm diferit cererea
+      // Logging parametrii pentru debugging
+      console.error(`getUsersForWorkspace params: ${JSON.stringify({
+        workspaceId,
+        limit: searchParams.limit,
+        offset: searchParams.offset ? searchParams.offset.substring(0, 15) + '...' : 'none',
+        auto_paginate,
+        max_pages,
+        opt_fields: searchParams.opt_fields
+      })}`);
+      
+      // Verificăm dacă vrem să obținem toate rezultatele sau doar o pagină
       if (auto_paginate) {
-        console.debug(`[DEBUG] Using auto-pagination mode with max_pages=${max_pages}`);
+        console.error(`Auto-pagination enabled, fetching up to ${max_pages} pages`);
         
-        // Utilizăm utilitatea de paginare pentru a obține toate rezultatele automat
-        const results = await this.handlePaginatedResults(
-          // Funcția pentru prima cerere
-          async () => {
-            const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
-            console.debug(`[DEBUG] Initial page received with ${response.data?.length || 0} users. Has next page: ${!!response.next_page}`);
-            return response;
-          },
-          // Funcția pentru paginile următoare
-          async (nextOffset) => {
-            console.debug(`[DEBUG] Fetching next page with offset: ${nextOffset.substring(0, 10)}...`);
-            const nextPageParams = { ...searchParams, offset: nextOffset };
-            const response = await this.users.getUsersForWorkspace(workspaceId, nextPageParams);
-            console.debug(`[DEBUG] Next page received with ${response.data?.length || 0} users. Has next page: ${!!response.next_page}`);
-            return response;
-          },
-          // Opțiuni de paginare
+        // Folosim handlePaginatedResults pentru a obține toate rezultatele paginat
+        let results = await this.handlePaginatedResults(
+          // Initial fetch function
+          () => this.users.getUsersForWorkspace(workspaceId, searchParams),
+          // Next page fetch function
+          (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
+          // Pagination options
           { auto_paginate, max_pages }
         );
         
-        // Adăugăm informații utile despre rezultate
-        if (results && Array.isArray(results)) {
-          console.debug(`[DEBUG] Total users returned after pagination: ${results.length}`);
-          
-          // Procesăm rezultatele pentru a adăuga flag-ul is_active
-          return results.map(user => this.processUserData(user as Record<string, any>, workspaceId));
-        }
-        
-        return results || [];
-      } else {
-        // Gestionăm paginarea manuală - obținem o singură pagină
-        console.debug(`[DEBUG] Using manual pagination mode, requesting a single page`);
-        
-        // Implementăm un mecanism de retry pentru cererea inițială (uneori API-ul poate returna erori temporare)
-        let retryCount = 0;
-        const maxRetries = 2;
-        let response = null;
-        
-        while (retryCount <= maxRetries) {
-          try {
-            // Facem cererea către API
-            response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
+        // Procesăm rezultatele pentru a extrage informații despre statusul activ
+        results = results.map((user: any) => {
+          // Dacă utilizatorul are câmpul workspace_memberships, extragem statutul activ
+          if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
+            const thisMembership = user.workspace_memberships.find(
+              (m: any) => m.workspace && m.workspace.gid === workspaceId
+            );
             
-            // Verificăm dacă răspunsul este valid
-            if (response && response.data && Array.isArray(response.data)) {
-              console.debug(`[DEBUG] Received ${response.data.length} users (limit was ${searchParams.limit})`);
-              break; // Ieșim din bucla de retry dacă cererea a reușit
-            } else {
-              console.error(`[ERROR] Unexpected response format from Asana API for getUsersForWorkspace:`, response);
-              throw new Error('Invalid response format from Asana API');
-            }
-          } catch (retryError) {
-            retryCount++;
-            if (retryCount <= maxRetries) {
-              console.warn(`[WARN] Retry ${retryCount}/${maxRetries} for getUsersForWorkspace due to error:`, (retryError as Error).message);
-              // Așteptăm puțin înainte de retry (backoff exponențial)
-              await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount - 1)));
-            } else {
-              throw retryError; // Re-aruncăm eroarea dacă am epuizat retry-urile
+            if (thisMembership) {
+              user.is_active = thisMembership.is_active || false;
             }
           }
+          return user;
+        });
+        
+        console.error(`Retrieved ${results.length} users with auto-pagination`);
+        
+        // Adăugăm informații de paginare
+        Object.defineProperty(results, 'pagination_info', {
+          value: {
+            auto_paginated: true,
+            total_count: results.length
+          },
+          enumerable: true
+        });
+        
+        return results;
+      } else {
+        console.error('Manual pagination, fetching single page');
+        
+        // Pentru o singură pagină, facem cererea direct și ținem cont strict de limita specificată
+        const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
+        
+        // Verificăm dacă avem date în răspuns
+        if (!response.data || !Array.isArray(response.data)) {
+          console.error('No data returned or invalid format');
+          return [];
         }
         
-        // Procesăm rezultatele pentru a adăuga informații utile
-        if (response && response.data && Array.isArray(response.data)) {
-          // Transformăm rezultatul adăugând informații suplimentare
-          const result = response.data.map(user => this.processUserData(user as Record<string, any>, workspaceId));
-          
-          // Adăugăm informații despre paginare direct în rezultat
-          Object.defineProperty(result, 'pagination_info', {
-            value: {
-              has_more: !!response.next_page,
-              next_offset: response.next_page?.offset || null,
-              limit: searchParams.limit,
-              count: result.length,
-              page_size: searchParams.limit,
-              workspace_id: workspaceId
-            },
-            enumerable: true
-          });
-          
-          // Adăugăm și o metodă helper pentru a obține următoarea pagină
-          Object.defineProperty(result, 'getNextPage', {
-            value: async () => {
-              if (response.next_page && response.next_page.offset) {
-                return this.getUsersForWorkspace(workspaceId, {
-                  ...opts,
-                  offset: response.next_page.offset,
-                  auto_paginate: false  // Menține paginarea manuală
-                });
-              }
-              return [];  // Dacă nu mai sunt pagini, returnăm un array gol
-            },
-            enumerable: false  // Nu includem această metodă în serializare JSON
-          });
-          
-          return result;
+        console.error(`Retrieved ${response.data.length} users in single page`);
+        
+        // Transformăm rezultatul pentru a adăuga is_active
+        const result = response.data.map((user: any) => {
+          // Dacă utilizatorul are câmpul workspace_memberships, extragem statutul activ
+          if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
+            const thisMembership = user.workspace_memberships.find(
+              (m: any) => m.workspace && m.workspace.gid === workspaceId
+            );
+            
+            if (thisMembership) {
+              user.is_active = thisMembership.is_active || false;
+            }
+          }
+          return user;
+        });
+        
+        // Adăugăm informații de paginare
+        Object.defineProperty(result, 'pagination_info', {
+          value: {
+            has_more: !!response.next_page,
+            next_offset: response.next_page?.offset || null,
+            limit: searchParams.limit,
+            count: result.length,
+            next_page_url: response.next_page?.path || null
+          },
+          enumerable: true
+        });
+        
+        if (response.next_page) {
+          console.error(`Next page available with offset: ${response.next_page.offset.substring(0, 15)}...`);
+        } else {
+          console.error('No more pages available');
         }
         
-        // Fallback în caz că răspunsul nu are structura așteptată
-        console.warn(`[WARN] Unexpected response format, returning empty array`);
-        return [];
+        return result;
       }
     } catch (error: any) {
-      console.error(`[ERROR] Error getting users for workspace ${workspaceId}: ${error.message}`);
-      
-      // Adăugăm informații detaliate despre eroare pentru diagnostic
-      if (error.response && error.response.body) {
-        console.error(`[ERROR] Response error details:`, error.response.body);
-      }
+      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
       
       // Add detailed error handling for common issues
       if (error.message?.includes('Not Found')) {
@@ -746,29 +731,6 @@ export class AsanaClientWrapper {
       
       throw error;
     }
-  }
-  
-  /**
-   * Helper pentru procesarea datelor utilizatorului și extragerea flag-ului is_active
-   * @param user Date utilizator din API
-   * @param workspaceId ID-ul workspace-ului curent
-   * @returns Utilizator cu informații suplimentare
-   */
-  private processUserData(user: Record<string, any>, workspaceId: string): Record<string, any> {
-    if (!user) return user;
-    
-    // Extragem statutul activ din workspace_memberships dacă există
-    if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
-      const thisMembership = user.workspace_memberships.find(
-        (m: any) => m.workspace && m.workspace.gid === workspaceId
-      );
-      
-      if (thisMembership) {
-        user.is_active = thisMembership.is_active || false;
-      }
-    }
-    
-    return user;
   }
 
   // Metodă nouă pentru crearea unei secțiuni într-un proiect
