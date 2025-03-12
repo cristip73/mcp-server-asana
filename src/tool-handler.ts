@@ -35,7 +35,7 @@ import {
   getSubtasksForTaskTool,
   getTasksForProjectTool
 } from './tools/task-tools.js';
-import { getTasksForTagTool, getTagsForWorkspaceTool } from './tools/tag-tools.js';
+import { getTasksForTagTool, getTagsForWorkspaceTool, addTagsToTaskTool } from './tools/tag-tools.js';
 import {
   addTaskDependenciesTool,
   addTaskDependentsTool,
@@ -78,6 +78,7 @@ export const tools: Tool[] = [
   getTasksForProjectTool,
   getTasksForTagTool,
   getTagsForWorkspaceTool,
+  addTagsToTaskTool,
   addTaskDependenciesTool,
   addTaskDependentsTool,
   setParentForTaskTool,
@@ -483,6 +484,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_list_workspace_users": {
             const { workspace_id, ...opts } = args;
             const response = await asanaClient.getUsersForWorkspace(workspace_id || undefined, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_add_tags_to_task": {
+            const { task_id, tag_ids } = args;
+            const response = await asanaClient.addTagsToTask(task_id, tag_ids);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

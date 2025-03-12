@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved
 
 
+## [1.8.6] - 2024-07-16
+
+### Added
+- New tool for adding tags to task (`asana_add_tags_to_task`) to support task categorization
+
+
 ## [1.8.5] - 2024-07-16
 
 ### Fixed
