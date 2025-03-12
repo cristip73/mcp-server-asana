@@ -567,6 +567,113 @@ export class AsanaClientWrapper {
     }
   }
 
+  /**
+   * Gets a list of users in a workspace with support for pagination
+   * @param workspaceId The workspace ID to get users for
+   * @param opts Additional options including pagination parameters
+   * @returns List of users in the workspace
+   */
+  async getUsersForWorkspace(workspaceId: string, opts: any = {}) {
+    try {
+      // Extract pagination parameters
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit,
+        offset,
+        ...otherOpts
+      } = opts;
+      
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts
+      };
+      
+      // Asana pentru acest endpoint necesită paginare explicită cu limit
+      // Dacă nu specificăm limit, API-ul va returna toate rezultatele (ignorând paginarea)
+      // Forțăm întotdeauna limita, chiar dacă nu este furnizată în opts
+      if (limit !== undefined) {
+        // Ensure limit is between 1 and 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      } else if (!auto_paginate) {
+        // Dacă nu avem auto_paginate, setăm o limită implicită pentru a forța paginarea
+        searchParams.limit = 100; // Limită implicită pentru a forța paginarea
+      }
+      
+      // Adăugăm offset doar dacă este specificat și pare valid
+      if (offset && typeof offset === 'string' && offset.startsWith('eyJ')) {
+        searchParams.offset = offset;
+      }
+      
+      // Verificăm dacă vrem să obținem toate rezultatele sau doar o pagină
+      if (auto_paginate) {
+        // Folosim handlePaginatedResults pentru a obține toate rezultatele paginat
+        return await this.handlePaginatedResults(
+          // Initial fetch function
+          () => this.users.getUsersForWorkspace(workspaceId, searchParams),
+          // Next page fetch function
+          (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
+          // Pagination options
+          { auto_paginate, max_pages }
+        );
+      } else {
+        // Pentru o singură pagină, facem cererea direct și returnăm rezultatele
+        // împreună cu informațiile de paginare
+        const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
+        
+        // Adăugăm informații despre paginare la rezultat
+        if (response.data && Array.isArray(response.data)) {
+          // Transformăm rezultatul într-un format util
+          const result = response.data.map((user: any) => {
+            // Dacă utilizatorul are câmpul workspace_memberships, extragem statutul activ
+            if (user.workspace_memberships && Array.isArray(user.workspace_memberships)) {
+              const thisMembership = user.workspace_memberships.find(
+                (m: any) => m.workspace && m.workspace.gid === workspaceId
+              );
+              
+              if (thisMembership) {
+                user.is_active = thisMembership.is_active || false;
+              }
+            }
+            return user;
+          });
+          
+          // Adăugăm informații de paginare
+          Object.defineProperty(result, 'pagination_info', {
+            value: {
+              has_more: !!response.next_page,
+              next_offset: response.next_page?.offset || null,
+              limit: searchParams.limit,
+              count: result.length
+            },
+            enumerable: true
+          });
+          
+          return result;
+        }
+        
+        return response.data || [];
+      }
+    } catch (error: any) {
+      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
+      
+      // Add detailed error handling for common issues
+      if (error.message?.includes('Not Found')) {
+        throw new Error(`Workspace with ID ${workspaceId} not found or inaccessible.`);
+      }
+      
+      if (error.message?.includes('Bad Request')) {
+        if (opts.limit && (opts.limit < 1 || opts.limit > 100)) {
+          throw new Error(`Invalid limit parameter: ${opts.limit}. Limit must be between 1 and 100.`);
+        }
+        
+        throw new Error(`Error retrieving users for workspace: ${error.message}. Check that all parameters are valid.`);
+      }
+      
+      throw error;
+    }
+  }
+
   // Metodă nouă pentru crearea unei secțiuni într-un proiect
   async createSectionForProject(projectId: string, name: string, opts: any = {}) {
     try {
