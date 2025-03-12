@@ -587,11 +587,6 @@ export class AsanaClientWrapper {
 
   async getTeamsForUser(user_gid: string, opts: any = {}) {
     try {
-      // Adăugăm workspace_gid la query dacă e setat DEFAULT_WORKSPACE_ID și nu e furnizat explicit
-      if (!opts.workspace && this.defaultWorkspaceId) {
-        opts.workspace = this.defaultWorkspaceId;
-      }
-      
       const response = await this.teams.getTeamsForUser(user_gid, opts);
       return response.data;
     } catch (error) {

@@ -10,10 +10,6 @@ export const getTeamsForUserTool: Tool = {
         type: "string",
         description: "The user GID to get teams for. Use 'me' to get teams for the current user."
       },
-      workspace: {
-        type: "string",
-        description: "The workspace to get teams from (optional if DEFAULT_WORKSPACE_ID is set)"
-      },
       opt_fields: {
         type: "string",
         description: "Comma-separated list of optional fields to include"

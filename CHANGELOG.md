@@ -12,14 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improved
 
-### Fixed
-
 
 ## [1.8.4] - 2024-07-16
 
 ### Fixed
 - Fixed project validation to properly support optional workspace parameter when DEFAULT_WORKSPACE_ID is set
-- Added workspace support to getTeamsForUser when DEFAULT_WORKSPACE_ID is set
 
 
 ## [1.8.3] - 2024-07-16
