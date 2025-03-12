@@ -548,4 +548,88 @@ export class AsanaClientWrapper {
       throw error;
     }
   }
+
+  // Metodă pentru adăugarea de membri la un proiect
+  async addMembersForProject(projectId: string, members: string[]) {
+    try {
+      const body = {
+        data: {
+          members: members
+        }
+      };
+      const response = await this.projects.addMembersForProject(body, projectId);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error adding members to project: ${error}`);
+      
+      // Adăugăm mai multe detalii despre eroare pentru debugging
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      
+      // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        const response = await client.callApi(
+          `/projects/${projectId}/addMembers`,
+          'POST',
+          { project_gid: projectId },
+          {},
+          {},
+          {},
+          { data: { members: members } },
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        return response.data;
+      } catch (fallbackError) {
+        console.error("Error in fallback method for adding members:", fallbackError);
+        throw fallbackError;
+      }
+    }
+  }
+
+  // Metodă pentru adăugarea de urmăritori la un proiect
+  async addFollowersForProject(projectId: string, followers: string[]) {
+    try {
+      const body = {
+        data: {
+          followers: followers
+        }
+      };
+      const response = await this.projects.addFollowersForProject(body, projectId);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error adding followers to project: ${error}`);
+      
+      // Adăugăm mai multe detalii despre eroare pentru debugging
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      
+      // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        const response = await client.callApi(
+          `/projects/${projectId}/addFollowers`,
+          'POST',
+          { project_gid: projectId },
+          {},
+          {},
+          {},
+          { data: { followers: followers } },
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        return response.data;
+      } catch (fallbackError) {
+        console.error("Error in fallback method for adding followers:", fallbackError);
+        throw fallbackError;
+      }
+    }
+  }
 }

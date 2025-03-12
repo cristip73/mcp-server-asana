@@ -9,7 +9,9 @@ import {
   getProjectSectionsTool,
   createSectionForProjectTool,
   createProjectForWorkspaceTool,
-  updateProjectTool
+  updateProjectTool,
+  addMembersForProjectTool,
+  addFollowersForProjectTool
 } from './tools/project-tools.js';
 import { 
   getProjectStatusTool,
@@ -45,40 +47,45 @@ import {
   getTeamsForWorkspaceTool 
 } from './tools/user-tools.js';
 
-export const list_of_tools: Tool[] = [
+export const tools: Tool[] = [
   listWorkspacesTool,
   searchProjectsTool,
-  searchTasksTool,
-  getTaskTool,
-  createTaskTool,
-  getStoriesForTaskTool,
-  updateTaskTool,
   getProjectTool,
   getProjectTaskCountsTool,
   getProjectSectionsTool,
   createSectionForProjectTool,
-  createTaskStoryTool,
-  addTaskDependenciesTool,
-  addTaskDependentsTool,
-  addFollowersToTaskTool,
+  createProjectForWorkspaceTool,
+  updateProjectTool,
+  getProjectStatusTool,
+  getProjectStatusesForProjectTool,
+  createProjectStatusTool,
+  deleteProjectStatusTool,
+  searchTasksTool,
+  getTaskTool,
+  createTaskTool,
+  updateTaskTool,
   createSubtaskTool,
   getMultipleTasksByGidTool,
   addTaskToSectionTool,
   getTasksForSectionTool,
   getProjectHierarchyTool,
   getSubtasksForTaskTool,
-  getProjectStatusTool,
-  getProjectStatusesForProjectTool,
-  createProjectStatusTool,
-  deleteProjectStatusTool,
-  setParentForTaskTool,
   getTasksForTagTool,
   getTagsForWorkspaceTool,
-  createProjectForWorkspaceTool,
-  updateProjectTool,
+  addTaskDependenciesTool,
+  addTaskDependentsTool,
+  setParentForTaskTool,
+  addFollowersToTaskTool,
+  getStoriesForTaskTool,
+  createTaskStoryTool,
   getTeamsForUserTool,
   getTeamsForWorkspaceTool,
+  addMembersForProjectTool,
+  addFollowersForProjectTool
 ];
+
+// Exportăm și ca list_of_tools pentru compatibilitate cu index.ts
+export const list_of_tools = tools;
 
 export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToolRequest) => Promise<CallToolResult> {
     return async (request: CallToolRequest) => {
@@ -358,21 +365,42 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
             // Extragem opt_fields pentru opțiuni
             const { opt_fields, ...restData } = projectData;
             
+            // Câmpuri problematice care necesită API-uri separate
+            const problematicFields = ['members', 'followers', 'public', 'html_notes', 'start_on'];
+            let hasProblematicFields = false;
+            
+            // Verificăm dacă există câmpuri problematice în datele de actualizare
+            for (const field of problematicFields) {
+              if (field in restData) {
+                // Înlăturăm câmpul problematic din datele trimise către API
+                delete restData[field];
+                hasProblematicFields = true;
+              }
+            }
+            
             // Pregătim datele pentru actualizare
             const data = {
               ...restData
             };
             
-            // Conversia array-urilor în formatul așteptat de API
-            if (data.members && Array.isArray(data.members)) {
-              data.members = data.members.map((id: string) => ({ gid: id }));
-            }
-            
-            if (data.followers && Array.isArray(data.followers)) {
-              data.followers = data.followers.map((id: string) => ({ gid: id }));
-            }
-            
             const response = await asanaClient.updateProject(project_id, data, { opt_fields });
+            
+            // Avertizare pentru utilizator dacă au fost înlăturate câmpuri problematice
+            if (hasProblematicFields) {
+              return {
+                content: [
+                  { 
+                    type: "text", 
+                    text: "Unele câmpuri nu pot fi actualizate direct prin updateProject și necesită API-uri separate:\n" +
+                          "- Pentru a actualiza membrii, folosește asana_add_members_for_project\n" +
+                          "- Pentru a actualiza followeri, folosește asana_add_followers_for_project\n" +
+                          "- Câmpurile public, html_notes și start_on au de asemenea limitări\n\n" +
+                          "Proiectul a fost actualizat cu succes pentru celelalte câmpuri. Iată răspunsul:\n" + 
+                          JSON.stringify(response) 
+                  }
+                ],
+              };
+            }
             
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -398,6 +426,22 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_add_followers_to_task": {
             const { task_id, followers } = args;
             const response = await asanaClient.addFollowersToTask(task_id, followers);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_add_members_for_project": {
+            const { project_id, members, ...opts } = args;
+            const response = await asanaClient.addMembersForProject(project_id, members);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_add_followers_for_project": {
+            const { project_id, followers, ...opts } = args;
+            const response = await asanaClient.addFollowersForProject(project_id, followers);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

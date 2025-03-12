@@ -262,9 +262,61 @@ export const updateProjectTool: Tool = {
       },
       opt_fields: {
         type: "string",
-        description: "Comma-separated list of optional fields to include"
+        description: "Comma-separated list of optional fields to include in the response"
       }
     },
     required: ["project_id"]
+  }
+};
+
+export const addMembersForProjectTool: Tool = {
+  name: "asana_add_members_for_project",
+  description: "Add members to a project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID to add members to"
+      },
+      members: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs to add as members to the project"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include in the response"
+      }
+    },
+    required: ["project_id", "members"]
+  }
+};
+
+export const addFollowersForProjectTool: Tool = {
+  name: "asana_add_followers_for_project",
+  description: "Add followers to a project",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID to add followers to"
+      },
+      followers: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "Array of user GIDs to add as followers to the project"
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include in the response"
+      }
+    },
+    required: ["project_id", "followers"]
   }
 };
