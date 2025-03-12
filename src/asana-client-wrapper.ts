@@ -442,9 +442,14 @@ export class AsanaClientWrapper {
     // The Asana API requires separate requests for each tag
     for (const tagGid of tagsArray) {
       try {
-        await this.tasks.addTagForTask(taskId, {
-          data: { tag: tagGid }
-        });
+        // Corect format for Asana API
+        const body = {
+          data: {
+            tag: tagGid
+          }
+        };
+        
+        await this.tasks.addTagForTask(body, taskId);
         results.successful_tags.push(tagGid);
       } catch (error: any) {
         results.failed_tags.push({
