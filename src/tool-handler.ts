@@ -484,7 +484,7 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_list_workspace_users": {
             const { workspace_id, ...opts } = args;
             try {
-              console.log("Getting users for workspace", workspace_id, "with options:", JSON.stringify(opts));
+              console.error("Getting users for workspace", workspace_id, "with options:", JSON.stringify(opts));
               const response = await asanaClient.getUsersForWorkspace(workspace_id, opts);
               
               // Verificăm dacă răspunsul este un array valid înainte de serializare
