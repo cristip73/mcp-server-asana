@@ -1,4 +1,5 @@
 import Asana from 'asana';
+import { ensureArray } from './utils/array-utils.js';
 
 export class AsanaClientWrapper {
   private workspaces: any;
@@ -25,6 +26,16 @@ export class AsanaClientWrapper {
     this.sections = new Asana.SectionsApi();
     this.users = new Asana.UsersApi();
     this.teams = new Asana.TeamsApi();
+  }
+
+  /**
+   * Helper method to ensure input is always an array
+   * @param input The input to normalize
+   * @returns An array representation of the input
+   * @private
+   */
+  private ensureArray(input: any): any[] {
+    return ensureArray(input);
   }
 
   async listWorkspaces(opts: any = {}) {
@@ -199,32 +210,92 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
-  async addTaskDependencies(taskId: string, dependencies: string[]) {
+  async addTaskDependencies(taskId: string, dependencies: any) {
+    // Ensure dependencies is an array
+    const dependenciesArray = this.ensureArray(dependencies);
+    
     const body = {
       data: {
-        dependencies: dependencies
+        dependencies: dependenciesArray
       }
     };
     const response = await this.tasks.addDependenciesForTask(body, taskId);
     return response.data;
   }
 
-  async addTaskDependents(taskId: string, dependents: string[]) {
+  async addTaskDependents(taskId: string, dependents: any) {
+    // Ensure dependents is an array
+    const dependentsArray = this.ensureArray(dependents);
+    
     const body = {
       data: {
-        dependents: dependents
+        dependents: dependentsArray
       }
     };
     const response = await this.tasks.addDependentsForTask(body, taskId);
     return response.data;
   }
 
+  /**
+   * Add one or more tags to a task
+   * @param taskId Task GID to add tags to
+   * @param tags Single tag GID or array of tag GIDs
+   * @returns Results object with successful and failed tags
+   */
+  async addTagsToTask(taskId: string, tags: any) {
+    // Ensure tags is an array
+    const tagsArray = this.ensureArray(tags);
+    
+    const results: {
+      task_id: string,
+      successful_tags: string[],
+      failed_tags: Array<{tag_gid: string, error: string}>,
+      task_data: any
+    } = {
+      task_id: taskId,
+      successful_tags: [],
+      failed_tags: [],
+      task_data: null
+    };
+    
+    if (tagsArray.length === 0) {
+      throw new Error("Tags must be provided as a non-empty array of tag GIDs");
+    }
+    
+    // The Asana API requires separate requests for each tag
+    for (const tagGid of tagsArray) {
+      try {
+        await this.tasks.addTagForTask(taskId, {
+          data: { tag: tagGid }
+        });
+        results.successful_tags.push(tagGid);
+      } catch (error: any) {
+        results.failed_tags.push({
+          tag_gid: tagGid,
+          error: error.message
+        });
+      }
+    }
+    
+    // Return the updated task with tags included
+    try {
+      results.task_data = await this.getTask(taskId, { opt_fields: "name,tags" });
+    } catch (error: any) {
+      console.error(`Could not fetch updated task data: ${error.message}`);
+    }
+    
+    return results;
+  }
+
   // Metoda nouă pentru adăugarea de followers la un task
-  async addFollowersToTask(taskId: string, followers: string[]) {
+  async addFollowersToTask(taskId: string, followers: any) {
+    // Ensure followers is an array
+    const followersArray = this.ensureArray(followers);
+    
     try {
       const body = {
         data: {
-          followers: followers
+          followers: followersArray
         }
       };
       const response = await this.tasks.addFollowersForTask(body, taskId);
@@ -241,7 +312,7 @@ export class AsanaClientWrapper {
           {},
           {},
           {},
-          { data: { followers: followers } },
+          { data: { followers: followersArray } },
           ['token'],
           ['application/json'],
           ['application/json'],
@@ -303,14 +374,16 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
-  async getMultipleTasksByGid(taskIds: string[], opts: any = {}) {
-    if (taskIds.length > 25) {
+  async getMultipleTasksByGid(taskIds: any, opts: any = {}) {
+    const taskIdsArray = this.ensureArray(taskIds);
+    
+    if (taskIdsArray.length > 25) {
       throw new Error("Maximum of 25 task IDs allowed");
     }
 
     // Use Promise.all to fetch tasks in parallel
     const tasks = await Promise.all(
-      taskIds.map(taskId => this.getTask(taskId, opts))
+      taskIdsArray.map(taskId => this.getTask(taskId, opts))
     );
 
     return tasks;
@@ -550,11 +623,12 @@ export class AsanaClientWrapper {
   }
 
   // Metodă pentru adăugarea de membri la un proiect
-  async addMembersForProject(projectId: string, members: string[]) {
+  async addMembersForProject(projectId: string, members: any) {
     try {
+      const membersArray = this.ensureArray(members);
       const body = {
         data: {
-          members: members
+          members: membersArray
         }
       };
       const response = await this.projects.addMembersForProject(body, projectId);
@@ -570,6 +644,7 @@ export class AsanaClientWrapper {
       // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
       try {
         const client = Asana.ApiClient.instance;
+        const membersArray = this.ensureArray(members);
         const response = await client.callApi(
           `/projects/${projectId}/addMembers`,
           'POST',
@@ -577,7 +652,7 @@ export class AsanaClientWrapper {
           {},
           {},
           {},
-          { data: { members: members } },
+          { data: { members: membersArray } },
           ['token'],
           ['application/json'],
           ['application/json'],
@@ -592,11 +667,12 @@ export class AsanaClientWrapper {
   }
 
   // Metodă pentru adăugarea de urmăritori la un proiect
-  async addFollowersForProject(projectId: string, followers: string[]) {
+  async addFollowersForProject(projectId: string, followers: any) {
     try {
+      const followersArray = this.ensureArray(followers);
       const body = {
         data: {
-          followers: followers
+          followers: followersArray
         }
       };
       const response = await this.projects.addFollowersForProject(body, projectId);
@@ -612,6 +688,7 @@ export class AsanaClientWrapper {
       // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
       try {
         const client = Asana.ApiClient.instance;
+        const followersArray = this.ensureArray(followers);
         const response = await client.callApi(
           `/projects/${projectId}/addFollowers`,
           'POST',
@@ -619,7 +696,7 @@ export class AsanaClientWrapper {
           {},
           {},
           {},
-          { data: { followers: followers } },
+          { data: { followers: followersArray } },
           ['token'],
           ['application/json'],
           ['application/json'],

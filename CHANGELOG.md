@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 
+## [1.8.0] - 2024-07-11
+
+### Added
+- Consistent array parameter handling across all functions
+- Added ensureArray utility to normalize different array input formats (arrays, comma-separated strings, JSON strings)
+- Modified tool-handler.ts to normalize array parameters at the request level
+- Updated all methods in AsanaClientWrapper that work with arrays to ensure consistent parameter handling
+- Implemented new addTagsToTask method with consistent array parameter handling
+
+### Fixed
+- Fixed issue with inconsistent handling of array parameters
+- Removed debugging logs that were causing JSON parsing errors
+
+
 ## [1.7.1] - 2024-07-03
 
 ### Added

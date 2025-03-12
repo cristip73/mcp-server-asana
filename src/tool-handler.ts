@@ -1,5 +1,6 @@
 import { Tool, CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { AsanaClientWrapper } from './asana-client-wrapper.js';
+import { normalizeArrayParameters } from './utils/array-utils.js';
 
 import { listWorkspacesTool } from './tools/workspace-tools.js';
 import {
@@ -95,7 +96,18 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           throw new Error("No arguments provided");
         }
 
-        const args = request.params.arguments as any;
+        // Normalizăm parametrii array înainte de procesare
+        const rawArgs = request.params.arguments as any;
+        const args = normalizeArrayParameters(rawArgs);
+        
+        // Folosim console.error în loc de console.log pentru debugging
+        // și doar dacă este necesar pentru debugging
+        // if (JSON.stringify(rawArgs) !== JSON.stringify(args)) {
+        //   console.error("Normalized array parameters:", {
+        //     before: rawArgs,
+        //     after: args
+        //   });
+        // }
 
         switch (request.params.name) {
           case "asana_list_workspaces": {
