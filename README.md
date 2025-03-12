@@ -25,6 +25,66 @@ Another example:
 
 ![Claude Desktop Example](https://raw.githubusercontent.com/cristip73/mcp-server-asana/main/mcp-server-asana-claude-example.png)
 
+## Working with Custom Fields
+
+When updating or creating tasks with custom fields, use the following format:
+
+```javascript
+asana_update_task({
+  task_id: "TASK_ID",
+  custom_fields: {
+    "custom_field_gid": value  // The value format depends on the field type
+  }
+})
+```
+
+The value format varies by field type:
+- **Enum fields**: Use the `enum_option.gid` of the option (NOT the display name)
+- **Text fields**: Use a string
+- **Number fields**: Use a number
+- **Date fields**: Use a string in YYYY-MM-DD format
+- **Multi-enum fields**: Use an array of enum option GIDs
+
+### Finding Custom Field GIDs
+
+To find the GIDs of custom fields and their enum options:
+
+1. Use `asana_get_task` with the `opt_fields` parameter set to include custom fields:
+   ```javascript
+   asana_get_task({
+     task_id: "TASK_ID",
+     opt_fields: "custom_fields,custom_fields.enum_options"
+   })
+   ```
+
+2. In the response, look for the `custom_fields` array. Each custom field will have:
+   - `gid`: The unique identifier for the custom field
+   - `name`: The display name of the custom field
+   - `resource_subtype`: The type of custom field (text, number, enum, etc.)
+   - For enum fields, examine the `enum_options` array to find the GID of each option
+
+### Example: Updating an Enum Custom Field
+
+```javascript
+// First, get the task with custom fields
+const taskDetails = asana_get_task({
+  task_id: "1234567890",
+  opt_fields: "custom_fields,custom_fields.enum_options"
+});
+
+// Find the custom field GID and enum option GID
+const priorityFieldGid = "11112222";  // From taskDetails.custom_fields
+const highPriorityOptionGid = "33334444";  // From the enum_options of the priority field
+
+// Update the task with the custom field
+asana_update_task({
+  task_id: "1234567890",
+  custom_fields: {
+    [priorityFieldGid]: highPriorityOptionGid
+  }
+});
+```
+
 ## Tools
 
 1. `asana_list_workspaces`

@@ -20,14 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added error-utils.ts with comprehensive error pattern mappings
 - Implemented user-friendly error messages with recovery steps
 - Included error codes in responses for better error identification
+- Standardized custom field updates with validation and better error messages
+- Added field-utils.ts utility for custom field validation and parsing
 
 ### Improved
 - Made error messages more contextual and specific to resource types
 - Enhanced error messages for "Not Found" errors to include resource IDs
+- Added comprehensive documentation for working with custom fields
+- Better handling of different custom field types (enum, text, number, date)
 
 ### Fixed
 - Fixed generic "Not Found" error messages to include more context
 - Improved error extraction from various Asana API response formats
+- Fixed JSON string handling for custom fields input
 
 
 ## [1.8.0] - 2024-07-11

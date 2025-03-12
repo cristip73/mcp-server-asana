@@ -191,18 +191,39 @@ export class AsanaClientWrapper {
   }
 
   async updateTask(taskId: string, data: any) {
-    const body = {
-      data: {
-        ...data,
-        // Handle resource_subtype if provided
-        resource_subtype: data.resource_subtype || undefined,
-        // Handle custom_fields if provided
-        custom_fields: data.custom_fields || undefined
+    // Create a deep clone of the data to avoid modifying the original
+    const taskData = JSON.parse(JSON.stringify(data));
+    
+    // Handle custom fields properly if provided
+    if (taskData.custom_fields) {
+      try {
+        // Import utils only when needed (avoiding circular dependencies)
+        const { parseCustomFields } = await import('./utils/field-utils.js');
+        taskData.custom_fields = parseCustomFields(taskData.custom_fields);
+      } catch (err) {
+        throw new Error(`Error processing custom fields: ${(err as Error).message}`);
       }
-    };
-    const opts = {};
-    const response = await this.tasks.updateTask(body, taskId, opts);
-    return response.data;
+    }
+    
+    try {
+      const body = {
+        data: {
+          ...taskData,
+          // Handle resource_subtype if provided
+          resource_subtype: taskData.resource_subtype || undefined,
+        }
+      };
+      
+      const opts = {};
+      const response = await this.tasks.updateTask(body, taskId, opts);
+      return response.data;
+    } catch (error: any) {
+      // Add more context for custom field errors
+      if (error.message?.includes('custom_field')) {
+        throw new Error(`Error updating custom fields: ${error.message}. Make sure you're using the correct format for each field type.`);
+      }
+      throw error;
+    }
   }
 
   async getProject(projectId: string, opts: any = {}) {
