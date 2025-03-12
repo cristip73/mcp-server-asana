@@ -1,5 +1,3 @@
-🤖
-
 ## MCP Server Asana Development Structure
 
 ### Key Files:
