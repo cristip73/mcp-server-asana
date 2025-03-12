@@ -270,13 +270,24 @@ export function validateProjectParameters(toolName: string, params: any): Valida
       break;
     
     case 'asana_search_projects':
-      result = validateGid(params.workspace, 'workspace');
-      if (!result.valid) errors.push(...result.errors);
+      // Workspace-ul este opțional dacă DEFAULT_WORKSPACE_ID este setat
+      if (params.workspace) {
+        result = validateGid(params.workspace, 'workspace');
+        if (!result.valid) errors.push(...result.errors);
+      }
+      
+      // Verifică pattern-ul de căutare
+      if (!params.name_pattern) {
+        errors.push("name_pattern is required");
+      }
       break;
     
     case 'asana_create_project_for_workspace':
-      result = validateGid(params.workspace, 'workspace');
-      if (!result.valid) errors.push(...result.errors);
+      // Workspace-ul este opțional dacă DEFAULT_WORKSPACE_ID este setat
+      if (params.workspace) {
+        result = validateGid(params.workspace, 'workspace');
+        if (!result.valid) errors.push(...result.errors);
+      }
       
       result = validateString(params.name, 'name', false);
       if (!result.valid) errors.push(...result.errors);

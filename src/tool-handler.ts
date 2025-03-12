@@ -162,10 +162,32 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
 
           case "asana_create_task": {
             const { project_id, ...taskData } = args;
-            const response = await asanaClient.createTask(project_id, taskData);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            
+            // Provide better logging when creating tasks with sections
+            if (taskData.section_id) {
+              console.log(`Creating task "${taskData.name}" in project ${project_id} and section ${taskData.section_id}`);
+            } else {
+              console.log(`Creating task "${taskData.name}" in project ${project_id}`);
+            }
+            
+            try {
+              const response = await asanaClient.createTask(project_id, taskData);
+              return {
+                content: [{ type: "text", text: JSON.stringify(response) }],
+              };
+            } catch (error: any) {
+              // Provide more context in the error response
+              const errorMessage = error.message || "Unknown error occurred";
+              return {
+                content: [{ 
+                  type: "text", 
+                  text: JSON.stringify({ 
+                    error: true, 
+                    message: errorMessage
+                  }) 
+                }],
+              };
+            }
           }
 
           case "asana_get_task_stories": {
