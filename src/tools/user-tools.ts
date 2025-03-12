@@ -38,9 +38,21 @@ export const getTeamsForWorkspaceTool: Tool = {
   }
 };
 
+/**
+ * Tool to list users in a workspace with pagination support
+ */
 export const getUsersForWorkspaceTool: Tool = {
   name: "asana_list_workspace_users",
-  description: "Get all users in a workspace or organization with pagination support. Returns is_active flag for each user where available.",
+  description: `Get all users in a workspace or organization.
+
+This tool supports both manual and automatic pagination. By default, it returns up to 50 users per page 
+with pagination metadata to fetch subsequent pages. Includes a useful 'is_active' flag extracted from 
+workspace memberships.
+
+Examples:
+- To get first 10 active users: { "workspace_id": "12345", "limit": 10, "opt_fields": "name,email,photo,workspace_memberships" }
+- To get all users automatically: { "workspace_id": "12345", "auto_paginate": true }
+- To get the next page of users: { "workspace_id": "12345", "limit": 50, "offset": "eyJkZXNjIjpmYWx..." }`,
   inputSchema: {
     type: "object",
     properties: {
@@ -50,60 +62,27 @@ export const getUsersForWorkspaceTool: Tool = {
       },
       opt_fields: {
         type: "string",
-        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,resource_type,workspace_memberships'). Include 'workspace_memberships' to get the is_active flag."
+        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,workspace_memberships'). Include 'workspace_memberships' to get the 'is_active' flag."
       },
       limit: {
         type: "number",
-        description: "Maximum number of results to return per page (1-100). Always specify a limit to enable pagination. Default is 50 if not specified.",
-        minimum: 1,
-        maximum: 100
+        description: "Maximum number of results to return per page (1-100). Defaults to 50 if not provided."
       },
       offset: {
         type: "string",
-        description: "Pagination token from previous response's pagination_info.next_offset. Must be a valid token starting with 'eyJ'."
+        description: "Pagination token from previous response's next_page.offset. IMPORTANT: Must be a valid token starting with 'eyJ'."
       },
       auto_paginate: {
         type: "boolean",
-        description: "If true, automatically fetches all pages and combines results (limited by max_pages). If false, returns a single page with pagination_info object.",
+        description: "If true, automatically fetches all pages and combines results (up to max_pages limit). If false, returns a single page with pagination information.",
         default: false
       },
       max_pages: {
         type: "number",
-        description: "Maximum number of pages to fetch when auto_paginate is true",
+        description: "Maximum number of pages to fetch when auto_paginate is true (default: 10)",
         default: 10
       }
     },
     required: ["workspace_id"]
-  },
-  examples: [
-    {
-      name: "Get active users in a workspace",
-      input: {
-        workspace_id: "12345678",
-        opt_fields: "name,email,photo,workspace_memberships",
-        limit: 20,
-        auto_paginate: false
-      },
-      output_hint: "Filter the results client-side using the is_active flag: result.filter(user => user.is_active)"
-    },
-    {
-      name: "Get all users with automatic pagination",
-      input: {
-        workspace_id: "12345678",
-        opt_fields: "name,email",
-        auto_paginate: true,
-        max_pages: 5
-      }
-    },
-    {
-      name: "Get next page of users",
-      input: {
-        workspace_id: "12345678",
-        opt_fields: "name,email,photo",
-        limit: 10,
-        offset: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-      },
-      output_hint: "Use pagination_info.next_offset from the response to get the next page"
-    }
-  ]
+  }
 }; 
