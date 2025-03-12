@@ -547,6 +547,134 @@ export class AsanaClientWrapper {
     return response.data;
   }
 
+  /**
+   * Retrieve users in a workspace with pagination support
+   * @param workspaceId Workspace GID to get users from
+   * @param opts Additional options including pagination options
+   * @returns List of users with pagination information if not auto-paginating
+   */
+  async getUsersForWorkspace(workspaceId: string, opts: any = {}) {
+    try {
+      console.log(`Getting users for workspace ${workspaceId} with options:`, JSON.stringify(opts));
+      
+      // Extract pagination parameters
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit = 50, // Forțăm un limit implicit pentru a asigura paginarea
+        offset,
+        ...otherOpts
+      } = opts;
+
+      // Validare pentru offset - trebuie să fie un token valid Asana (începe cu 'eyJ')
+      if (offset && typeof offset === 'string' && !offset.startsWith('eyJ')) {
+        throw new Error(`Invalid offset parameter: ${offset}. Offset must be a valid pagination token from a previous response.`);
+      }
+      
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts,
+        // Forțăm o limită pentru a asigura funcționarea corectă a paginării
+        limit: Math.min(Math.max(1, Number(limit)), 100)
+      };
+      
+      // Adăugăm offset doar dacă este un token valid
+      if (offset && typeof offset === 'string' && offset.startsWith('eyJ')) {
+        searchParams.offset = offset;
+        console.log(`Using offset token: ${offset.substring(0, 15)}...`);
+      }
+      
+      // Logăm parametrii finali pentru debugging
+      console.log(`Final search parameters:`, JSON.stringify(searchParams));
+
+      if (auto_paginate) {
+        console.log(`Auto-paginating with max_pages=${max_pages}`);
+        
+        // Use the paginated results handler for more reliable pagination
+        const results = await this.handlePaginatedResults(
+          // Initial fetch function
+          () => this.users.getUsersForWorkspace(workspaceId, searchParams),
+          // Next page fetch function
+          (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
+          // Pagination options
+          { auto_paginate, max_pages }
+        );
+        
+        console.log(`Retrieved ${results.length} users with auto-pagination`);
+        
+        // Procesăm fiecare utilizator pentru a extrage informații utile
+        return results.map((user: any) => {
+          // Extragem flag-ul is_active din informațiile despre membership-ul în workspace
+          const isActive = user.workspace_memberships?.some((membership: any) => 
+            membership.workspace.gid === workspaceId && membership.is_active
+          ) ?? false;
+          
+          return {
+            ...user,
+            is_active: isActive
+          };
+        });
+      } else {
+        // Pentru paginare manuală, returnăm și informațiile de paginare
+        console.log(`Manual pagination with limit=${searchParams.limit}`);
+        const response = await this.users.getUsersForWorkspace(workspaceId, searchParams);
+        
+        const users = response.data.map((user: any) => {
+          // Extragem flag-ul is_active din informațiile despre membership-ul în workspace
+          const isActive = user.workspace_memberships?.some((membership: any) => 
+            membership.workspace.gid === workspaceId && membership.is_active
+          ) ?? false;
+          
+          return {
+            ...user,
+            is_active: isActive
+          };
+        });
+        
+        // Construim rezultatul cu informații de paginare complete
+        const result: {
+          data: any[];
+          pagination_info: {
+            has_more: boolean;
+            next_offset?: string;
+            limit: number;
+            count: number;
+            next_page_url?: string;
+          }
+        } = {
+          data: users,
+          pagination_info: {
+            has_more: response.next_page ? true : false,
+            next_offset: response.next_page?.offset,
+            limit: searchParams.limit,
+            count: users.length
+          }
+        };
+        
+        // Adăugăm URL-ul pentru pagina următoare dacă există
+        if (response.next_page) {
+          result.pagination_info.next_page_url = response.next_page.path;
+        }
+        
+        console.log(`Retrieved ${users.length} users. Has more: ${result.pagination_info.has_more}`);
+        return result;
+      }
+    } catch (error: any) {
+      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
+      
+      // Add more detailed error handling for common issues
+      if (error.message?.includes('Not Found')) {
+        throw new Error(`Workspace with ID ${workspaceId} not found or inaccessible.`);
+      }
+      
+      if (error.message?.includes('Bad Request')) {
+        throw new Error(`Error retrieving users: ${error.message}. Check that all parameters are valid.`);
+      }
+      
+      throw error;
+    }
+  }
+
   async getTeamsForUser(user_gid: string, opts: any = {}) {
     try {
       const response = await this.teams.getTeamsForUser(user_gid, opts);
@@ -563,96 +691,6 @@ export class AsanaClientWrapper {
       return response.data;
     } catch (error) {
       console.error(`Error in getTeamsForWorkspace: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all users in a workspace with pagination support
-   * @param workspaceId The workspace GID
-   * @param opts Additional options including pagination parameters
-   * @returns List of users in the workspace with pagination metadata
-   */
-  async getUsersForWorkspace(workspaceId: string, opts: any = {}) {
-    try {
-      console.log(`Getting users for workspace ${workspaceId} with options:`, JSON.stringify(opts));
-      
-      // Extract pagination parameters
-      const { 
-        auto_paginate = false, 
-        max_pages = 10,
-        limit = 50, // Forțăm folosirea unui limit implicit pentru a asigura paginarea
-        offset,
-        ...otherOpts
-      } = opts;
-      
-      // Build search parameters
-      const searchParams: any = {
-        ...otherOpts
-      };
-      
-      // Add pagination parameters - IMPORTANT: this enforces a limit always
-      // Ensure limit is between 1 and 100
-      searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
-      
-      // Validare strictă pentru offset - trebuie să fie un token valid Asana
-      if (offset) {
-        if (typeof offset === 'string' && offset.startsWith('eyJ')) {
-          searchParams.offset = offset;
-        } else {
-          console.error(`Invalid offset parameter: ${offset}. Offset must be a valid pagination token from previous response.`);
-          throw new Error('Invalid offset parameter. Offset must be a valid pagination token from a previous response.');
-        }
-      }
-      
-      console.log(`Final search parameters for getUsersForWorkspace: ${JSON.stringify(searchParams)}`);
-      
-      // Folosim handlePaginatedResults pentru a gestiona paginarea în mod consistent
-      const users = await this.handlePaginatedResults(
-        // Initial fetch function
-        () => this.users.getUsersForWorkspace(workspaceId, searchParams),
-        // Next page fetch function
-        (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
-        // Pagination options
-        { auto_paginate, max_pages }
-      );
-      
-      // Transformăm rezultatele pentru a extrage datele is_active din workspace_memberships
-      const enrichedUsers = users.map((user: any) => {
-        // Extragem informația is_active din workspace_memberships dacă există
-        const isActive = user.workspace_memberships?.some((membership: any) => 
-          membership.workspace.gid === workspaceId && membership.is_active
-        );
-        
-        return {
-          ...user,
-          is_active: isActive !== undefined ? isActive : null
-        };
-      });
-      
-      // Pentru mai multă transparență, adăugăm informații despre paginare în rezultat
-      const result = {
-        data: enrichedUsers,
-        pagination_info: {
-          has_more: auto_paginate ? false : users.length === searchParams.limit,
-          next_offset: users.length === searchParams.limit ? "Use the 'next_page.offset' token from the response" : null,
-          limit: searchParams.limit,
-          count: enrichedUsers.length,
-          auto_paginate_used: auto_paginate,
-          next_page_url: users.length === searchParams.limit ? 
-            `/workspaces/${workspaceId}/users?limit=${searchParams.limit}&offset={next_page_token}` : null
-        }
-      };
-      
-      return result;
-    } catch (error: any) {
-      console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
-      
-      // Adăugăm detalii specifice pentru erori comune
-      if (error.message?.includes('offset')) {
-        throw new Error(`Invalid pagination parameters: ${error.message}. Asana requires offset tokens to be obtained from previous responses.`);
-      }
-      
       throw error;
     }
   }

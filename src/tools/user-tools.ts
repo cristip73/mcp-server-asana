@@ -39,20 +39,11 @@ export const getTeamsForWorkspaceTool: Tool = {
 };
 
 /**
- * Tool to list users in a workspace with pagination support
+ * Tool for listing users in an Asana workspace with pagination support
  */
 export const getUsersForWorkspaceTool: Tool = {
   name: "asana_list_workspace_users",
-  description: `Get all users in a workspace or organization.
-
-This tool supports both manual and automatic pagination. By default, it returns up to 50 users per page 
-with pagination metadata to fetch subsequent pages. Includes a useful 'is_active' flag extracted from 
-workspace memberships.
-
-Examples:
-- To get first 10 active users: { "workspace_id": "12345", "limit": 10, "opt_fields": "name,email,photo,workspace_memberships" }
-- To get all users automatically: { "workspace_id": "12345", "auto_paginate": true }
-- To get the next page of users: { "workspace_id": "12345", "limit": 50, "offset": "eyJkZXNjIjpmYWx..." }`,
+  description: "Get all users in a workspace or organization with pagination support. Results include an 'is_active' field to identify active users. Results are sorted alphabetically by Asana API.",
   inputSchema: {
     type: "object",
     properties: {
@@ -62,27 +53,62 @@ Examples:
       },
       opt_fields: {
         type: "string",
-        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,workspace_memberships'). Include 'workspace_memberships' to get the 'is_active' flag."
+        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,role'). The 'is_active' flag will be automatically extracted from workspace_memberships."
       },
       limit: {
         type: "number",
-        description: "Maximum number of results to return per page (1-100). Defaults to 50 if not provided."
+        description: "Maximum number of results to return per page (1-100). Defaults to 50 if not provided. Use this with offset for paginating through large workspaces."
       },
       offset: {
         type: "string",
-        description: "Pagination token from previous response's next_page.offset. IMPORTANT: Must be a valid token starting with 'eyJ'."
+        description: "Pagination token from a previous response's pagination_info.next_offset. MUST be a valid Asana token starting with 'eyJ'."
       },
       auto_paginate: {
         type: "boolean",
-        description: "If true, automatically fetches all pages and combines results (up to max_pages limit). If false, returns a single page with pagination information.",
+        description: "If true, automatically fetches all pages and combines results (limited by max_pages). If false, returns a single page with pagination info for manual paging.",
         default: false
       },
       max_pages: {
         type: "number",
-        description: "Maximum number of pages to fetch when auto_paginate is true (default: 10)",
+        description: "Maximum number of pages to fetch when auto_paginate is true, to prevent excessive API calls for very large workspaces.",
         default: 10
       }
     },
     required: ["workspace_id"]
-  }
+  },
+  examples: [
+    {
+      name: "List first 10 users",
+      input: {
+        workspace_id: "12345",
+        limit: 10,
+        opt_fields: "name,email"
+      }
+    },
+    {
+      name: "Get only active users",
+      input: {
+        workspace_id: "12345",
+        opt_fields: "name,email,workspace_memberships"
+      },
+      output: "Filter the results with: results.filter(user => user.is_active)"
+    },
+    {
+      name: "Auto-paginate to get all users",
+      input: {
+        workspace_id: "12345",
+        auto_paginate: true,
+        max_pages: 5,
+        opt_fields: "name,email"
+      }
+    },
+    {
+      name: "Get next page of users",
+      input: {
+        workspace_id: "12345",
+        offset: "eyJ0eXAi...", // token from previous response
+        limit: 50
+      }
+    }
+  ]
 }; 
