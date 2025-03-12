@@ -1,6 +1,7 @@
 import { Tool, CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { AsanaClientWrapper } from './asana-client-wrapper.js';
 import { normalizeArrayParameters } from './utils/array-utils.js';
+import { formatErrorResponse } from './utils/error-utils.js';
 
 import { listWorkspacesTool } from './tools/workspace-tools.js';
 import {
@@ -462,15 +463,24 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error executing tool:", error);
+        
+        // Log detailed error information for debugging
+        if (error.response && error.response.body) {
+          console.error("Response error details:", error.response.body);
+        }
+        
+        // Add more context for specific tools
+        if (request.params.name === "asana_get_task" && error.message === "Not Found" && request.params.arguments) {
+          error = new Error(`Task with ID '${request.params.arguments.task_id}' not found or inaccessible`);
+        }
+        
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-              }),
+              text: formatErrorResponse(error),
             },
           ],
         };

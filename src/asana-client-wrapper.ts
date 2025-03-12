@@ -130,31 +130,59 @@ export class AsanaClientWrapper {
   }
 
   async getTask(taskId: string, opts: any = {}) {
-    const response = await this.tasks.getTask(taskId, opts);
-    return response.data;
+    try {
+      const response = await this.tasks.getTask(taskId, opts);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error retrieving task ${taskId}: ${error.message}`);
+      // Adăugăm informații utile pentru diagnosticare
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      throw error;
+    }
   }
 
   async createTask(projectId: string, data: any) {
-    // Ensure projects array includes the projectId
-    const projects = data.projects || [];
-    if (!projects.includes(projectId)) {
-      projects.push(projectId);
-    }
-
-    const taskData = {
-      data: {
-        ...data,
-        projects,
-        // Handle resource_subtype if provided
-        resource_subtype: data.resource_subtype || 'default_task',
-        // Handle custom_fields if provided
-        custom_fields: data.custom_fields || {},
-        // Asigură-te că task-ul este adăugat la sfârșitul listei
-        insert_before: null
+    try {
+      // Ensure projects array includes the projectId
+      const projects = data.projects || [];
+      if (!projects.includes(projectId)) {
+        projects.push(projectId);
       }
-    };
-    const response = await this.tasks.createTask(taskData);
-    return response.data;
+
+      const taskData = {
+        data: {
+          ...data,
+          projects,
+          // Handle resource_subtype if provided
+          resource_subtype: data.resource_subtype || 'default_task',
+          // Handle custom_fields if provided
+          custom_fields: data.custom_fields || {},
+          // Asigură-te că task-ul este adăugat la sfârșitul listei
+          insert_before: null
+        }
+      };
+      const response = await this.tasks.createTask(taskData);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error creating task: ${error.message}`);
+      // Add useful diagnostics information
+      if (error.response && error.response.body) {
+        console.error(`Response error details: ${JSON.stringify(error.response.body, null, 2)}`);
+      }
+      
+      // Provide more context about the error
+      if (error.message.includes("Missing input")) {
+        throw new Error(`Failed to create task: Missing required parameters. ${error.message}`);
+      }
+      
+      if (error.message.includes("Not a valid project")) {
+        throw new Error(`Project ID ${projectId} is not valid or you don't have access to it.`);
+      }
+      
+      throw error;
+    }
   }
 
   async getStoriesForTask(taskId: string, opts: any = {}) {

@@ -13,6 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 
+## [1.8.1] - 2024-07-12
+
+### Added
+- Enhanced error handling with detailed error messages
+- Added error-utils.ts with comprehensive error pattern mappings
+- Implemented user-friendly error messages with recovery steps
+- Included error codes in responses for better error identification
+
+### Improved
+- Made error messages more contextual and specific to resource types
+- Enhanced error messages for "Not Found" errors to include resource IDs
+
+### Fixed
+- Fixed generic "Not Found" error messages to include more context
+- Improved error extraction from various Asana API response formats
+
+
 ## [1.8.0] - 2024-07-11
 
 ### Added
