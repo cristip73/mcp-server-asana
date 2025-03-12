@@ -1,5 +1,6 @@
 import Asana from 'asana';
 import { ensureArray } from './utils/array-utils.js';
+import { handlePagination, PaginationOptions, PaginatedResponse } from './utils/pagination.js';
 
 export class AsanaClientWrapper {
   private workspaces: any;
@@ -38,9 +39,66 @@ export class AsanaClientWrapper {
     return ensureArray(input);
   }
 
+  /**
+   * Helper method to handle paginated API calls
+   * @param initialFetch Function to fetch the initial page
+   * @param nextPageFetch Function to fetch subsequent pages
+   * @param options Pagination options
+   * @returns Combined results from all pages
+   */
+  private async handlePaginatedResults<T>(
+    initialFetch: () => Promise<PaginatedResponse<T>>,
+    nextPageFetch: (offset: string) => Promise<PaginatedResponse<T>>,
+    options: PaginationOptions = {}
+  ): Promise<T[]> {
+    try {
+      // Fetch the initial page
+      const initialResponse = await initialFetch();
+      
+      // Use the pagination utility to handle additional pages if needed
+      return await handlePagination(initialResponse, nextPageFetch, options);
+    } catch (error: any) {
+      console.error(`Error in paginated request: ${error.message}`);
+      throw error;
+    }
+  }
+
   async listWorkspaces(opts: any = {}) {
-    const response = await this.workspaces.getWorkspaces(opts);
-    return response.data;
+    try {
+      // Extract pagination parameters
+      const {
+        auto_paginate = false,
+        max_pages = 10,
+        limit,
+        offset,
+        ...otherOpts
+      } = opts;
+      
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts
+      };
+      
+      // Add pagination parameters
+      if (limit !== undefined) {
+        // Ensure limit is between 1 and 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      }
+      if (offset) searchParams.offset = offset;
+      
+      // Use the paginated results handler for more reliable pagination
+      return await this.handlePaginatedResults(
+        // Initial fetch function
+        () => this.workspaces.getWorkspaces(searchParams),
+        // Next page fetch function
+        (nextOffset) => this.workspaces.getWorkspaces({ ...searchParams, offset: nextOffset }),
+        // Pagination options
+        { auto_paginate, max_pages }
+      );
+    } catch (error: any) {
+      console.error(`Error listing workspaces: ${error.message}`);
+      throw error;
+    }
   }
 
   async searchProjects(workspace: string, namePattern: string, archived: boolean = false, opts: any = {}) {
@@ -53,80 +111,121 @@ export class AsanaClientWrapper {
   }
 
   async searchTasks(workspace: string, searchOpts: any = {}) {
-    // Extract known parameters
-    const {
-      text,
-      resource_subtype,
-      completed,
-      is_subtask,
-      has_attachment,
-      is_blocked,
-      is_blocking,
-      sort_by,
-      sort_ascending,
-      opt_fields,
-      ...otherOpts
-    } = searchOpts;
+    try {
+      // Extract pagination parameters
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit,
+        offset,
+        // Extract other known parameters
+        text,
+        resource_subtype,
+        completed,
+        is_subtask,
+        has_attachment,
+        is_blocked,
+        is_blocking,
+        sort_by,
+        sort_ascending,
+        opt_fields,
+        ...otherOpts
+      } = searchOpts;
 
-    // Build search parameters
-    const searchParams: any = {
-      ...otherOpts // Include any additional filter parameters
-    };
-
-    // Handle custom fields if provided
-    if (searchOpts.custom_fields) {
-      if ( typeof searchOpts.custom_fields == "string" ) {
-        try {
-          searchOpts.custom_fields = JSON.parse( searchOpts.custom_fields );
-        } catch ( err ) {
-          if (err instanceof Error) {
-            err.message = "custom_fields must be a JSON object : " + err.message;
-          }
-          throw err;
-        }
-      }
-      Object.entries(searchOpts.custom_fields).forEach(([key, value]) => {
-        searchParams[`custom_fields.${key}`] = value;
-      });
-      delete searchParams.custom_fields; // Remove the custom_fields object since we've processed it
-    }
-
-    // Add optional parameters if provided
-    if (text) searchParams.text = text;
-    if (resource_subtype) searchParams.resource_subtype = resource_subtype;
-    if (completed !== undefined) searchParams.completed = completed;
-    if (is_subtask !== undefined) searchParams.is_subtask = is_subtask;
-    if (has_attachment !== undefined) searchParams.has_attachment = has_attachment;
-    if (is_blocked !== undefined) searchParams.is_blocked = is_blocked;
-    if (is_blocking !== undefined) searchParams.is_blocking = is_blocking;
-    if (sort_by) searchParams.sort_by = sort_by;
-    if (sort_ascending !== undefined) searchParams.sort_ascending = sort_ascending;
-    if (opt_fields) searchParams.opt_fields = opt_fields;
-
-    const response = await this.tasks.searchTasksForWorkspace(workspace, searchParams);
-
-    // Transform the response to simplify custom fields if present
-    const transformedData = response.data.map((task: any) => {
-      if (!task.custom_fields) return task;
-
-      return {
-        ...task,
-        custom_fields: task.custom_fields.reduce((acc: any, field: any) => {
-          const key = `${field.name} (${field.gid})`;
-          let value = field.display_value;
-
-          // For enum fields with a value, include the enum option GID
-          if (field.type === 'enum' && field.enum_value) {
-            value = `${field.display_value} (${field.enum_value.gid})`;
-          }
-
-          acc[key] = value;
-          return acc;
-        }, {})
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts // Include any additional filter parameters
       };
-    });
 
-    return transformedData;
+      // Handle custom fields if provided
+      if (searchOpts.custom_fields) {
+        if (typeof searchOpts.custom_fields == "string") {
+          try {
+            searchOpts.custom_fields = JSON.parse(searchOpts.custom_fields);
+          } catch (err) {
+            if (err instanceof Error) {
+              err.message = "custom_fields must be a JSON object : " + err.message;
+            }
+            throw err;
+          }
+        }
+        Object.entries(searchOpts.custom_fields).forEach(([key, value]) => {
+          searchParams[`custom_fields.${key}`] = value;
+        });
+        delete searchParams.custom_fields; // Remove the custom_fields object since we've processed it
+      }
+
+      // Add optional parameters if provided
+      if (text) searchParams.text = text;
+      if (resource_subtype) searchParams.resource_subtype = resource_subtype;
+      if (completed !== undefined) searchParams.completed = completed;
+      if (is_subtask !== undefined) searchParams.is_subtask = is_subtask;
+      if (has_attachment !== undefined) searchParams.has_attachment = has_attachment;
+      if (is_blocked !== undefined) searchParams.is_blocked = is_blocked;
+      if (is_blocking !== undefined) searchParams.is_blocking = is_blocking;
+      if (sort_by) searchParams.sort_by = sort_by;
+      if (sort_ascending !== undefined) searchParams.sort_ascending = sort_ascending;
+      if (opt_fields) searchParams.opt_fields = opt_fields;
+      
+      // Add pagination parameters
+      if (limit !== undefined) {
+        // Ensure limit is between 1 and 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      }
+      if (offset) searchParams.offset = offset;
+
+      // Use the paginated results handler for more reliable pagination
+      const results = await this.handlePaginatedResults(
+        // Initial fetch function
+        () => this.tasks.searchTasksForWorkspace(workspace, searchParams),
+        // Next page fetch function
+        (nextOffset) => this.tasks.searchTasksForWorkspace(workspace, { ...searchParams, offset: nextOffset }),
+        // Pagination options
+        { auto_paginate, max_pages }
+      );
+      
+      // Transform the response to simplify custom fields if present
+      return results.map((task: any) => {
+        if (!task.custom_fields) return task;
+
+        return {
+          ...task,
+          custom_fields: task.custom_fields.reduce((acc: any, field: any) => {
+            const key = `${field.name} (${field.gid})`;
+            let value = field.display_value;
+
+            // For enum fields with a value, include the enum option GID
+            if (field.type === 'enum' && field.enum_value) {
+              value = `${field.display_value} (${field.enum_value.gid})`;
+            }
+
+            acc[key] = value;
+            return acc;
+          }, {})
+        };
+      });
+    } catch (error: any) {
+      console.error(`Error searching tasks: ${error.message}`);
+      
+      // Add more detailed error handling for common issues
+      if (error.message?.includes('Bad Request')) {
+        // Check for common causes of Bad Request
+        if (searchOpts.projects_any) {
+          throw new Error(`Error searching tasks with projects_any: ${error.message}. Try using 'projects.any' instead of 'projects_any', or use getTasksForProject directly.`);
+        }
+        if (searchOpts.limit && (searchOpts.limit < 1 || searchOpts.limit > 100)) {
+          throw new Error(`Invalid limit parameter: ${searchOpts.limit}. Limit must be between 1 and 100.`);
+        }
+        if (searchOpts.offset && !searchOpts.offset.startsWith('eyJ')) {
+          throw new Error(`Invalid offset parameter: ${searchOpts.offset}. Offset must be a valid pagination token from a previous response.`);
+        }
+        
+        // Generic bad request error with suggestions
+        throw new Error(`Bad Request error when searching tasks. Check that all parameters are valid. Common issues: invalid workspace ID, invalid project reference, or incompatible search filters. ${error.message}`);
+      }
+      
+      throw error;
+    }
   }
 
   async getTask(taskId: string, opts: any = {}) {
@@ -555,7 +654,33 @@ export class AsanaClientWrapper {
 
   // Metodă pentru obținerea structurii ierarhice complete a unui proiect
   async getProjectHierarchy(projectId: string, opts: any = {}) {
+    /**
+     * Get the complete hierarchical structure of an Asana project
+     * Pagination features:
+     * 1. Auto pagination: Set auto_paginate=true to get all results automatically
+     * 2. Manual pagination: 
+     *    - First request: Set limit=N (without offset)
+     *    - Subsequent requests: Use limit=N with offset token from previous response
+     * 3. Pagination metadata is provided at multiple levels:
+     *    - Global: result.pagination_info
+     *    - Section level: section.pagination_info (contains next_offset token)
+     *    - Task level: task.subtasks_pagination_info (for subtasks pagination)
+     * 
+     * @param projectId - The project GID
+     * @param opts - Options including pagination params (limit, offset, auto_paginate)
+     */
     try {
+      // Extrage opțiunile de paginare
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit,
+        offset,
+        include_subtasks = true,
+        include_completed_subtasks,
+        ...otherOpts 
+      } = opts;
+
       // Pasul 1: Obține informații despre proiect
       const projectFields = "name,gid" + (opts.opt_fields_project ? `,${opts.opt_fields_project}` : "");
       const project = await this.getProject(projectId, { opt_fields: projectFields });
@@ -564,28 +689,143 @@ export class AsanaClientWrapper {
       const sectionFields = "name,gid" + (opts.opt_fields_sections ? `,${opts.opt_fields_sections}` : "");
       const sections = await this.getProjectSections(projectId, { opt_fields: sectionFields });
       
+      // Verifică dacă avem secțiuni
+      if (!sections || sections.length === 0) {
+        return {
+          project: project,
+          sections: []
+        };
+      }
+      
+      // Calculăm limita efectivă pentru task-uri, dacă este specificată
+      // Dacă nu este specificată, folosim o valoare implicită care va permite API-ului să decidă
+      const effectiveLimit = limit ? Math.min(Math.max(1, Number(limit)), 100) : undefined;
+      
       // Pasul 3: Pentru fiecare secțiune, obține task-urile
       const sectionsWithTasks = await Promise.all(sections.map(async (section: any) => {
-        const taskFields = "name,gid,completed,resource_subtype" + (opts.opt_fields_tasks ? `,${opts.opt_fields_tasks}` : "");
-        const taskOpts: any = { opt_fields: taskFields };
+        const taskFields = "name,gid,completed,resource_subtype,num_subtasks" + (opts.opt_fields_tasks ? `,${opts.opt_fields_tasks}` : "");
+        
+        // Pregătim parametrii pentru task-uri
+        const taskOpts: any = { 
+          opt_fields: taskFields
+        };
+        
+        // Adăugăm limita doar dacă este specificată
+        if (effectiveLimit) {
+          taskOpts.limit = effectiveLimit;
+        }
+        
+        // Adăugăm offset doar dacă este specificat și pare valid (începe cu 'eyJ')
+        if (offset && typeof offset === 'string' && offset.startsWith('eyJ')) {
+          taskOpts.offset = offset;
+        }
         
         // Include sau exclude task-urile completate
         if (opts.include_completed_tasks === false) {
           taskOpts.completed_since = "now";
         }
         
-        const tasks = await this.getTasksForSection(section.gid, taskOpts);
+        // Obținem task-urile din secțiune cu sau fără paginare
+        let tasks;
+        if (auto_paginate) {
+          // Folosim handlePaginatedResults pentru a obține toate task-urile cu paginare automată
+          tasks = await this.handlePaginatedResults(
+            // Initial fetch function
+            () => this.tasks.getTasksForSection(section.gid, taskOpts),
+            // Next page fetch function
+            (nextOffset) => this.tasks.getTasksForSection(section.gid, { ...taskOpts, offset: nextOffset }),
+            // Pagination options
+            { auto_paginate, max_pages }
+          );
+        } else {
+          // Obținem doar o pagină de task-uri
+          try {
+            const response = await this.tasks.getTasksForSection(section.gid, taskOpts);
+            tasks = response.data || [];
+            
+            // Includem informații despre paginare în rezultat
+            if (response.next_page) {
+              section.pagination_info = {
+                has_more: true,
+                next_offset: response.next_page.offset
+              };
+            } else {
+              section.pagination_info = {
+                has_more: false
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching tasks for section ${section.gid}:`, error);
+            tasks = [];
+            section.error = "Could not fetch tasks for this section";
+          }
+        }
         
-        // Pasul 4: Pentru fiecare task, obține subtask-urile dacă există
+        // Pasul 4: Pentru fiecare task, obține subtask-urile dacă acestea există și dacă utilizatorul dorește
         const tasksWithSubtasks = await Promise.all(tasks.map(async (task: any) => {
-          // Verifică dacă are subtask-uri
-          if (task.num_subtasks && task.num_subtasks > 0) {
+          // Verifică dacă avem nevoie de subtask-uri și dacă task-ul are subtask-uri
+          if (include_subtasks && task.num_subtasks && task.num_subtasks > 0) {
             try {
-              const subtasks = await this.tasks.getSubtasksForTask(task.gid, { opt_fields: taskFields });
-              return { ...task, subtasks: subtasks.data };
+              // Pregătim câmpurile pentru subtask-uri
+              const subtaskFields = "name,gid,completed,resource_subtype" + 
+                (opts.opt_fields_subtasks ? `,${opts.opt_fields_subtasks}` : 
+                 opts.opt_fields_tasks ? `,${opts.opt_fields_tasks}` : "");
+              
+              // Pregătim parametrii pentru subtask-uri
+              const subtaskOpts: any = { 
+                opt_fields: subtaskFields
+              };
+              
+              // Adăugăm limita doar dacă este specificată
+              if (effectiveLimit) {
+                subtaskOpts.limit = effectiveLimit;
+              }
+              
+              // Aplicăm filtrarea pentru task-uri completate (dacă este specificată)
+              if (include_completed_subtasks === false) {
+                subtaskOpts.completed_since = "now";
+              }
+              
+              // Folosim metoda corectă pentru a obține subtask-urile
+              let subtasks;
+              if (auto_paginate) {
+                // Cu paginare automată
+                subtasks = await this.handlePaginatedResults(
+                  // Initial fetch function
+                  () => this.tasks.getSubtasksForTask(task.gid, subtaskOpts),
+                  // Next page fetch function
+                  (nextOffset) => this.tasks.getSubtasksForTask(task.gid, { ...subtaskOpts, offset: nextOffset }),
+                  // Pagination options
+                  { auto_paginate, max_pages }
+                );
+              } else {
+                // Fără paginare automată, doar o singură pagină
+                try {
+                  const response = await this.tasks.getSubtasksForTask(task.gid, subtaskOpts);
+                  subtasks = response.data || [];
+                  
+                  // Includem informații despre paginare în rezultat
+                  if (response.next_page) {
+                    task.subtasks_pagination_info = {
+                      has_more: true,
+                      next_offset: response.next_page.offset
+                    };
+                  } else {
+                    task.subtasks_pagination_info = {
+                      has_more: false
+                    };
+                  }
+                } catch (error) {
+                  console.error(`Error fetching subtasks for task ${task.gid}:`, error);
+                  subtasks = [];
+                  task.subtasks_error = "Could not fetch subtasks for this task";
+                }
+              }
+              
+              return { ...task, subtasks };
             } catch (error) {
               console.error(`Error fetching subtasks for task ${task.gid}:`, error);
-              return { ...task, subtasks: [] };
+              return { ...task, subtasks: [], subtasks_error: "Error fetching subtasks" };
             }
           }
           return { ...task, subtasks: [] };
@@ -594,14 +834,28 @@ export class AsanaClientWrapper {
         return { ...section, tasks: tasksWithSubtasks };
       }));
       
-      // Returneaza structura ierarhică completă
-      return {
+      // Adăugăm informații despre paginare la nivelul rezultatului
+      const result = {
         project: project,
-        sections: sectionsWithTasks
+        sections: sectionsWithTasks,
+        pagination_info: {
+          auto_paginate_used: auto_paginate,
+          effective_limit: effectiveLimit,
+          offset_provided: offset ? true : false
+        }
       };
-    } catch (error) {
-      console.error("Error in getProjectHierarchy:", error);
-      throw error;
+      
+      // Returnează structura ierarhică completă
+      return result;
+    } catch (error: any) {
+      // Oferim un mesaj de eroare mai util pentru probleme comune
+      if (error.message && error.message.includes('offset')) {
+        console.error("Error in getProjectHierarchy with pagination:", error);
+        throw new Error(`Invalid pagination parameters: ${error.message}. Asana requires offset tokens to be obtained from previous responses.`);
+      } else {
+        console.error("Error in getProjectHierarchy:", error);
+        throw error;
+      }
     }
   }
 
@@ -756,6 +1010,70 @@ export class AsanaClientWrapper {
         console.error("Error in fallback method for adding followers:", fallbackError);
         throw fallbackError;
       }
+    }
+  }
+
+  /**
+   * Get tasks for a specific project with pagination support
+   * @param projectId Project GID
+   * @param opts Additional options including pagination options
+   * @returns List of tasks in the project
+   */
+  async getTasksForProject(projectId: string, opts: any = {}) {
+    try {
+      // Extract pagination parameters
+      const { 
+        auto_paginate = false, 
+        max_pages = 10,
+        limit,
+        offset,
+        opt_fields,
+        completed,
+        ...otherOpts
+      } = opts;
+
+      // Build search parameters
+      const searchParams: any = {
+        ...otherOpts
+      };
+      
+      // Add specific filters
+      if (completed !== undefined) searchParams.completed = completed;
+      if (opt_fields) searchParams.opt_fields = opt_fields;
+      
+      // Add pagination parameters
+      if (limit !== undefined) {
+        // Ensure limit is between 1 and 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      }
+      if (offset) searchParams.offset = offset;
+
+      // Use the paginated results handler for more reliable pagination
+      return await this.handlePaginatedResults(
+        // Initial fetch function
+        () => this.tasks.getTasksForProject(projectId, searchParams),
+        // Next page fetch function
+        (nextOffset) => this.tasks.getTasksForProject(projectId, { ...searchParams, offset: nextOffset }),
+        // Pagination options
+        { auto_paginate, max_pages }
+      );
+    } catch (error: any) {
+      console.error(`Error getting tasks for project ${projectId}: ${error.message}`);
+      
+      // Add detailed error handling for common issues
+      if (error.message?.includes('Not Found')) {
+        throw new Error(`Project with ID ${projectId} not found or inaccessible.`);
+      }
+      
+      if (error.message?.includes('Bad Request')) {
+        if (opts.limit && (opts.limit < 1 || opts.limit > 100)) {
+          throw new Error(`Invalid limit parameter: ${opts.limit}. Limit must be between 1 and 100.`);
+        }
+        
+        throw new Error(`Error retrieving tasks for project: ${error.message}. Check that all parameters are valid.`);
+      }
+      
+      throw error;
     }
   }
 }

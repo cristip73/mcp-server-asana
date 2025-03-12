@@ -474,6 +474,20 @@ export const getTasksForSectionTool: Tool = {
       limit: {
         type: "number",
         description: "Number of results to return per page (1-100)"
+      },
+      offset: {
+        type: "string",
+        description: "Pagination token from previous response. Required for paginated requests"
+      },
+      auto_paginate: {
+        type: "boolean",
+        description: "If true, automatically gets all pages of results (limited by max_pages)",
+        default: false
+      },
+      max_pages: {
+        type: "number",
+        description: "Maximum pages to fetch when auto_paginate is true",
+        default: 10
       }
     },
     required: ["section_id"]
@@ -482,25 +496,70 @@ export const getTasksForSectionTool: Tool = {
 
 export const getProjectHierarchyTool: Tool = {
   name: "asana_get_project_hierarchy",
-  description: "Obține structura ierarhică completă a unui proiect Asana, inclusiv secțiunile, task-urile și subtask-urile sale",
+  description: "Get the complete hierarchical structure of an Asana project, including its sections, tasks, and subtasks. Supports both manual and automatic pagination.\n\n" +
+  "PAGINATION GUIDE:\n" +
+  "1. Get all data at once: Use auto_paginate=true\n" +
+  "2. Manual pagination: First request with limit=N, then use the returned 'next_offset' tokens in subsequent requests\n" +
+  "3. Tips for large projects: Specify only needed fields, set include_subtasks=false if subtasks aren't needed\n\n" +
+  "EXAMPLES:\n" +
+  "- For all data: {project_id:\"123\", auto_paginate:true}\n" +
+  "- For first page: {project_id:\"123\", limit:10}\n" +
+  "- For next page: {project_id:\"123\", limit:10, offset:\"eyJ0a...\"}\n" +
+  "Note: offset must be a token from previous response (section.pagination_info.next_offset)",
   inputSchema: {
     type: "object",
     properties: {
       project_id: {
         type: "string",
-        description: "ID-ul proiectului pentru care se dorește obținerea structurii ierarhice"
+        description: "ID of the project to get hierarchy for"
       },
       include_completed_tasks: {
         type: "boolean",
-        description: "Specifică dacă să includă și task-urile completate (implicit: false)"
+        description: "Include completed tasks (default: false)"
+      },
+      include_subtasks: {
+        type: "boolean",
+        description: "Include subtasks for each task (default: true)"
+      },
+      include_completed_subtasks: {
+        type: "boolean",
+        description: "Include completed subtasks (default: follows include_completed_tasks)"
       },
       opt_fields_tasks: {
         type: "string",
-        description: "Câmpuri opționale pentru task-uri (ex: 'name,notes,assignee,due_on,completed')"
+        description: "Optional fields for tasks (e.g. 'name,notes,assignee,due_on,completed')"
+      },
+      opt_fields_subtasks: {
+        type: "string",
+        description: "Optional fields for subtasks (if not specified, uses same as tasks)"
       },
       opt_fields_sections: {
         type: "string",
-        description: "Câmpuri opționale pentru secțiuni (ex: 'name,created_at')"
+        description: "Optional fields for sections (e.g. 'name,created_at')"
+      },
+      opt_fields_project: {
+        type: "string",
+        description: "Optional fields for project (e.g. 'name,created_at,owner')"
+      },
+      limit: {
+        type: "number",
+        description: "Max results per page (1-100). For pagination, set this and don't use auto_paginate",
+        minimum: 1,
+        maximum: 100
+      },
+      offset: {
+        type: "string",
+        description: "Pagination token from previous response. MUST be valid token from section.pagination_info.next_offset"
+      },
+      auto_paginate: {
+        type: "boolean",
+        description: "If true, automatically gets all pages and combines results (limited by max_pages)",
+        default: false
+      },
+      max_pages: {
+        type: "number",
+        description: "Maximum pages to fetch when auto_paginate is true (protects against infinite loops)",
+        default: 10
       }
     },
     required: ["project_id"]
@@ -509,20 +568,76 @@ export const getProjectHierarchyTool: Tool = {
 
 export const getSubtasksForTaskTool: Tool = {
   name: "asana_get_subtasks_for_task",
-  description: "Obține lista de subtask-uri pentru un task specific",
+  description: "Get the list of subtasks for a specific task",
   inputSchema: {
     type: "object",
     properties: {
       task_id: {
         type: "string",
-        description: "ID-ul task-ului pentru care se doresc subtask-urile"
+        description: "ID of the task to get subtasks for"
       },
       opt_fields: {
         type: "string",
-        description: "Câmpuri opționale pentru subtask-uri (ex: 'name,notes,assignee,due_on,completed')"
+        description: "Optional fields for subtasks (e.g. 'name,notes,assignee,due_on,completed')"
+      },
+      limit: {
+        type: "number",
+        description: "Maximum number of results per page (1-100)"
+      },
+      offset: {
+        type: "string",
+        description: "Pagination token from previous response"
+      },
+      auto_paginate: {
+        type: "boolean",
+        description: "If true, automatically gets all pages and combines results",
+        default: false
       }
     },
     required: ["task_id"]
+  }
+};
+
+export const getTasksForProjectTool: Tool = {
+  name: "asana_get_tasks_for_project",
+  description: "Get all tasks from a specific project with pagination support",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID to get tasks for"
+      },
+      completed: {
+        type: "boolean",
+        description: "Filter for completed or incomplete tasks"
+      },
+      limit: {
+        type: "number",
+        description: "Maximum number of results to return (1-100)",
+        minimum: 1,
+        maximum: 100
+      },
+      offset: {
+        type: "string",
+        description: "Pagination token from previous response"
+      },
+      auto_paginate: {
+        type: "boolean",
+        description: "Automatically fetch all pages of results (up to max_pages)",
+        default: false
+      },
+      max_pages: {
+        type: "number",
+        description: "Maximum number of pages to fetch when auto_paginate is true",
+        default: 10
+      },
+      opt_fields: {
+        type: "string",
+        description: "Comma-separated list of optional fields to include"
+      }
+    },
+    required: ["project_id"]
   }
 };
 

@@ -41,6 +41,195 @@ Testing confirmed most of the initially identified issues and provided important
 
 > **Note**: Following additional testing of the features `asana_add_members_for_project` and `asana_add_followers_for_project`, we confirmed that they work correctly and with parameters in array format. These features can serve as models for future implementations, especially for adding tags and standardizing arrays in parameters.
 
+### 3.0 Search Users
+- **Priority: High**
+- **Description**: Implementing functions for identifying and listing users in Asana
+- **Justification**: Enables better user management, task assignment, and reporting capabilities
+- **Status**: Planned
+
+#### 3.0.1 List Users in a Workspace
+- **Priority: High**
+- **Description**: Implement a function to list all users in a specific workspace
+- **Justification**: Essential for user management and task assignment
+- **Implementation Details**:
+  - Create a new tool in `src/tools/user-tools.ts`:
+    ```typescript
+    export const getUsersForWorkspaceTool: Tool = {
+      name: "asana_list_workspace_users",
+      description: "Get all users in a workspace or organization",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace_id: {
+            type: "string",
+            description: "The workspace ID to get users for"
+          },
+          opt_fields: {
+            type: "string",
+            description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,role')"
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of results to return per page (1-100)"
+          },
+          offset: {
+            type: "string",
+            description: "Pagination token from previous response"
+          },
+          auto_paginate: {
+            type: "boolean",
+            description: "If true, automatically gets all pages and combines results",
+            default: false
+          }
+        },
+        required: ["workspace_id"]
+      }
+    };
+    ```
+  - Add implementation in `src/asana-client-wrapper.ts`:
+    ```typescript
+    async getUsersForWorkspace(workspaceId: string, opts: any = {}) {
+      try {
+        // Extract pagination parameters
+        const { 
+          auto_paginate = false, 
+          max_pages = 10,
+          limit,
+          offset,
+          ...otherOpts
+        } = opts;
+        
+        // Build search parameters
+        const searchParams: any = {
+          ...otherOpts
+        };
+        
+        // Add pagination parameters
+        if (limit !== undefined) {
+          searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+        }
+        if (offset) searchParams.offset = offset;
+        
+        // Use the paginated results handler for more reliable pagination
+        return await this.handlePaginatedResults(
+          () => this.users.getUsersForWorkspace(workspaceId, searchParams),
+          (nextOffset) => this.users.getUsersForWorkspace(workspaceId, { ...searchParams, offset: nextOffset }),
+          { auto_paginate, max_pages }
+        );
+      } catch (error: any) {
+        console.error(`Error getting users for workspace ${workspaceId}: ${error.message}`);
+        throw error;
+      }
+    }
+    ```
+  - Update `tool-handler.ts` to handle the new tool
+
+#### 3.0.2 Get User Details
+- **Priority: Medium**
+- **Description**: Implement a function to get detailed information about a specific user
+- **Justification**: Provides comprehensive user information for reporting and management
+- **Implementation Details**:
+  - Create a new tool in `src/tools/user-tools.ts`:
+    ```typescript
+    export const getUserDetailsTool: Tool = {
+      name: "asana_get_user_details",
+      description: "Get detailed information about a specific user",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: {
+            type: "string",
+            description: "The user ID to get details for. Use 'me' to get details for the current user."
+          },
+          opt_fields: {
+            type: "string",
+            description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,workspaces,teams')"
+          }
+        },
+        required: ["user_id"]
+      }
+    };
+    ```
+  - Leverage existing `getUser` method in Asana API
+  - Update `tool-handler.ts` to handle the new tool
+
+#### 3.0.3 List Users in a Team
+- **Priority: Medium**
+- **Description**: Implement a function to list all users in a specific team
+- **Justification**: Enables team-based user management and reporting
+- **Implementation Details**:
+  - Create a new tool in `src/tools/user-tools.ts`:
+    ```typescript
+    export const getUsersForTeamTool: Tool = {
+      name: "asana_list_team_users",
+      description: "Get all users in a specific team",
+      inputSchema: {
+        type: "object",
+        properties: {
+          team_id: {
+            type: "string",
+            description: "The team ID to get users for"
+          },
+          opt_fields: {
+            type: "string",
+            description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo')"
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of results to return per page (1-100)"
+          },
+          offset: {
+            type: "string",
+            description: "Pagination token from previous response"
+          },
+          auto_paginate: {
+            type: "boolean",
+            description: "If true, automatically gets all pages and combines results",
+            default: false
+          }
+        },
+        required: ["team_id"]
+      }
+    };
+    ```
+  - Add implementation in `src/asana-client-wrapper.ts`:
+    ```typescript
+    async getUsersForTeam(teamId: string, opts: any = {}) {
+      try {
+        // Extract pagination parameters
+        const { 
+          auto_paginate = false, 
+          max_pages = 10,
+          limit,
+          offset,
+          ...otherOpts
+        } = opts;
+        
+        // Build search parameters
+        const searchParams: any = {
+          ...otherOpts
+        };
+        
+        // Add pagination parameters
+        if (limit !== undefined) {
+          searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+        }
+        if (offset) searchParams.offset = offset;
+        
+        // Use the paginated results handler for more reliable pagination
+        return await this.handlePaginatedResults(
+          () => this.users.getUsersForTeam(teamId, searchParams),
+          (nextOffset) => this.users.getUsersForTeam(teamId, { ...searchParams, offset: nextOffset }),
+          { auto_paginate, max_pages }
+        );
+      } catch (error: any) {
+        console.error(`Error getting users for team ${teamId}: ${error.message}`);
+        throw error;
+      }
+    }
+    ```
+  - Update `tool-handler.ts` to handle the new tool
+
 ### 3.1 Creating Tasks in Specific Sections
 - **Priority: Critical**
 - **Description**: Implementing the `section_id` parameter for the `asana_create_task` function
@@ -121,9 +310,9 @@ Testing confirmed most of the initially identified issues and provided important
       };
     ```
   - Example usage:
-    ```javascript
+  ```javascript
     // Task creation with automatic section placement
-    asana_create_task({
+  asana_create_task({
       name: "Task Name",
       project_id: "PROJECT_ID",
       section_id: "SECTION_ID" // New parameter
@@ -250,22 +439,22 @@ Testing confirmed most of the initially identified issues and provided important
     1. First, find available tags using `asana_get_tags_for_workspace`
     2. Then add tags to a task using their GIDs:
     
-    ```javascript
+  ```javascript
     // Get available tags
     asana_get_tags_for_workspace({
       workspace_gid: "WORKSPACE_ID"
     })
     
     // Add tags to a task
-    asana_add_tags_to_task({
+  asana_add_tags_to_task({
       task_id: "TASK_ID",
       tags: ["TAG_ID1", "TAG_ID2"]
-    })
-    ```
+  })
+  ```
     ```
   
   - Example usage:
-    ```javascript
+  ```javascript
     // Add multiple tags to a task
     asana_add_tags_to_task({
       task_id: "TASK_ID",
@@ -490,7 +679,7 @@ Testing confirmed most of the initially identified issues and provided important
   - Example usage:
     ```javascript
     // Basic usage with subtasks
-    asana_get_project_hierarchy({
+  asana_get_project_hierarchy({
       project_id: "PROJECT_ID",
       include_subtasks: true
     })
@@ -503,8 +692,8 @@ Testing confirmed most of the initially identified issues and provided important
       tasks_per_section: 50,
       subtasks_per_task: 10,
       opt_fields: "name,gid,due_on,completed,assignee"
-    })
-    ```
+  })
+  ```
   - Expected output:
     ```json
     {
@@ -764,9 +953,9 @@ Testing confirmed most of the initially identified issues and provided important
     
     When you need to update multiple tasks at once, you can use the batch update feature:
     
-    ```javascript
-    asana_batch_update_tasks({
-      tasks: [
+  ```javascript
+  asana_batch_update_tasks({
+    tasks: [
         { task_id: "1234", completed: true },
         { task_id: "5678", due_on: "2025-05-01" }
       ],
@@ -1001,14 +1190,14 @@ Testing confirmed most of the initially identified issues and provided important
     
     To reorganize your project by changing the order of sections:
     
-    ```javascript
-    asana_reorder_sections({
+  ```javascript
+  asana_reorder_sections({
       project_id: "PROJECT_ID",
       section_order: ["SECTION_ID1", "SECTION_ID2", "SECTION_ID3"],
       validate_sections: true // Optional, default is true
-    })
-    ```
-    
+  })
+  ```
+
     This will reorder the sections to match the provided sequence. All sections in the project must be included in the `section_order` array.
     ```
   
@@ -1372,22 +1561,22 @@ Testing confirmed most of the initially identified issues and provided important
     
     Get a comprehensive overview of a project's health and status:
     
-    ```javascript
-    asana_get_project_summary({
+  ```javascript
+  asana_get_project_summary({
       project_id: "PROJECT_ID",
       include_sections: true,              // Section-level metrics
       include_task_distribution: true,     // Distribution by assignee
       include_due_date_metrics: true,      // Due date distribution
       include_overdue_tasks: false,        // List of overdue tasks
       include_recent_activity: false       // Recent activity metrics
-    })
-    ```
-    
+  })
+  ```
+
     This provides a consolidated view of project metrics to help assess project health and progress at a glance.
     ```
   
   - Example usage:
-    ```javascript
+  ```javascript
     // Basic project summary with default options
     asana_get_project_summary({
       project_id: "PROJECT_ID"
@@ -1398,9 +1587,9 @@ Testing confirmed most of the initially identified issues and provided important
       project_id: "PROJECT_ID",
       include_overdue_tasks: true,
       include_recent_activity: true
-    })
-    ```
-  
+  })
+  ```
+
   - Expected response:
     ```json
     {
@@ -1513,7 +1702,7 @@ After careful evaluation, we recommend **removing this feature** from the implem
 1. **Redundancy with Existing Functionality**: This functionality can be fully accomplished using the existing `asana_search_tasks` tool with the appropriate filters.
 
 2. **Implementation Example Using Existing Tools**:
-   ```javascript
+  ```javascript
    // Instead of creating a new tool, use asana_search_tasks with project filter:
    asana_search_tasks({
      workspace: "WORKSPACE_ID",
@@ -1521,35 +1710,35 @@ After careful evaluation, we recommend **removing this feature** from the implem
      text: "search term",         // Text to search for
      opt_fields: "name,notes,due_on,assignee",  // Include notes in results
      limit: 20  // Limit number of results
-   })
-   ```
+  })
+  ```
 
 3. **Better Alternative**: Instead of implementing this as a separate feature, we recommend enhancing the documentation for `asana_search_tasks` to include clear examples of project-specific searches.
 
-4. **Documentation Enhancement**:
+## 4. **Documentation Enhancement**:
    ```markdown
    #### Searching Within a Project
    
    To search for tasks within a specific project:
    
-   ```javascript
+  ```javascript
    asana_search_tasks({
      workspace: "WORKSPACE_ID",
      projects_any: "PROJECT_ID",  // Limit search to this project
      text: "search term"
-   })
-   ```
-   
+  })
+  ```
+
    For including task notes in your search:
    
-   ```javascript
+  ```javascript
    asana_search_tasks({
      workspace: "WORKSPACE_ID",
      projects_any: "PROJECT_ID",
      text: "search term",
      opt_fields: "name,notes,due_on,assignee"
-   })
-   ```
+  })
+  ```
    ```
 
 5. **Resource Allocation**: The development effort would be better directed toward implementing unique features that aren't possible with the current toolset.
@@ -1867,7 +2056,7 @@ After careful evaluation, we recommend **removing this feature** from the implem
     
     Create copies of existing tasks with optional related elements:
     
-    ```javascript
+  ```javascript
     asana_duplicate_task({
       task_id: "TASK_ID",
       name: "New Task Name",                 // Optional - defaults to "Copy of [original name]"
@@ -2287,23 +2476,23 @@ After careful evaluation, we recommend **removing this feature** from the implem
   - Example usage:
     ```javascript
     // For enum fields
-    asana_update_task({
+  asana_update_task({
       task_id: "TASK_ID",
       custom_fields: {"1201019211530163": "1201019211530164"}
-    })
-    
+  })
+  
     // For text fields
-    asana_update_task({
+  asana_update_task({
       task_id: "TASK_ID",
       custom_fields: {"1201019211530165": "Important note"}
-    })
-    
+  })
+  
     // For number fields
-    asana_update_task({
+  asana_update_task({
       task_id: "TASK_ID",
       custom_fields: {"1201019211530166": 42}
-    })
-    ```
+  })
+  ```
 
 ### 4.2 Improving `asana_get_project_task_counts` Function
 - **Priority: High**
@@ -2370,6 +2559,14 @@ After careful evaluation, we recommend **removing this feature** from the implem
     opt_fields: "name,due_on"
   })
   ```
+
+### 4.5 ✅ Streamlined Pagination
+- **Priority: Medium**
+- **Description**: Standardizing pagination across all functions that return multiple items
+- **Justification**: Simplifies handling large result sets and improves consistency
+- **Status**: Implemented in v1.8.1 - Added pagination.ts utility and enhanced methods for standardized pagination
+- **Implementation Details**:
+  // ... existing code ...
 
 ## 5. Implementation Roadmap
 
@@ -3021,11 +3218,11 @@ The implementation will be considered successful when:
 
 ## 4. Modifications to Existing Features (5)
 
-### 4.1 Standardizing Custom Field Updates
+### 4.1 ✅ Standardizing Custom Field Updates
 - **Priority: Critical**
 - **Description**: Clear documentation and standardization of format for different types of fields
 - **Justification**: Eliminates confusion and errors in usage
-- **Status**: ✅ Implemented in v1.8.1 - Added field-utils.ts with validation and parsing for custom fields
+- **Status**: Implemented in v1.8.1 - Added field-utils.ts with validation and parsing for custom fields
 - **Implementation Details**:
   - Update the documentation in `README.md` to clearly explain custom field usage:
     ```markdown
@@ -3486,7 +3683,7 @@ The implementation will be considered successful when:
 - **Implementation Details**:
   // ... existing code ...
 
-### 4.4 Improved Parameter Validation
+### 4.4 ✅ Improved Parameter Validation
 - **Priority: Medium**
 - **Description**: Adding robust parameter validation to all functions
 - **Justification**: Prevents API errors by catching invalid parameters early

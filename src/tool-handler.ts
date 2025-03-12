@@ -2,6 +2,7 @@ import { Tool, CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk
 import { AsanaClientWrapper } from './asana-client-wrapper.js';
 import { normalizeArrayParameters } from './utils/array-utils.js';
 import { formatErrorResponse } from './utils/error-utils.js';
+import { validateParameters } from './utils/validation.js';
 
 import { listWorkspacesTool } from './tools/workspace-tools.js';
 import {
@@ -31,7 +32,8 @@ import {
   addTaskToSectionTool,
   getTasksForSectionTool,
   getProjectHierarchyTool,
-  getSubtasksForTaskTool
+  getSubtasksForTaskTool,
+  getTasksForProjectTool
 } from './tools/task-tools.js';
 import { getTasksForTagTool, getTagsForWorkspaceTool } from './tools/tag-tools.js';
 import {
@@ -72,6 +74,7 @@ export const tools: Tool[] = [
   getTasksForSectionTool,
   getProjectHierarchyTool,
   getSubtasksForTaskTool,
+  getTasksForProjectTool,
   getTasksForTagTool,
   getTagsForWorkspaceTool,
   addTaskDependenciesTool,
@@ -101,6 +104,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
         const rawArgs = request.params.arguments as any;
         const args = normalizeArrayParameters(rawArgs);
         
+        // Validăm parametrii în funcție de tipul operațiunii
+        const toolName = request.params.name;
+        const validationResult = validateParameters(toolName, args);
+        
+        if (!validationResult.valid) {
+          throw new Error(`Parameter validation failed: ${validationResult.errors.join(', ')}`);
+        }
+
         // Folosim console.error în loc de console.log pentru debugging
         // și doar dacă este necesar pentru debugging
         // if (JSON.stringify(rawArgs) !== JSON.stringify(args)) {
@@ -455,6 +466,14 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_add_followers_for_project": {
             const { project_id, followers, ...opts } = args;
             const response = await asanaClient.addFollowersForProject(project_id, followers);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_tasks_for_project": {
+            const { project_id, ...opts } = args;
+            const response = await asanaClient.getTasksForProject(project_id, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

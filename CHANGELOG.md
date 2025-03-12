@@ -22,12 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Included error codes in responses for better error identification
 - Standardized custom field updates with validation and better error messages
 - Added field-utils.ts utility for custom field validation and parsing
+- Implemented streamlined pagination across multiple functions with auto-paginate support
+- Added new asana_get_tasks_for_project tool with comprehensive pagination options
+- Created pagination.ts utility for standardized pagination handling
 
 ### Improved
 - Made error messages more contextual and specific to resource types
 - Enhanced error messages for "Not Found" errors to include resource IDs
 - Added comprehensive documentation for working with custom fields
 - Better handling of different custom field types (enum, text, number, date)
+- Improved searchTasks function to support pagination and better error handling
+- Standardized parameter validation for all functions returning multiple items
+- Updated listWorkspaces and other collection methods to use pagination utilities
 
 ### Fixed
 - Fixed generic "Not Found" error messages to include more context
