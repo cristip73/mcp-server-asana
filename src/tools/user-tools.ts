@@ -40,7 +40,7 @@ export const getTeamsForWorkspaceTool: Tool = {
 
 export const getUsersForWorkspaceTool: Tool = {
   name: "asana_list_workspace_users",
-  description: "Get all users in a workspace or organization with pagination support. Returns is_active flag for each user based on workspace membership.",
+  description: "Get all users in a workspace or organization with improved pagination support. Returns is_active flag for each user where available. Use pagination_info in response for manual navigation.",
   inputSchema: {
     type: "object",
     properties: {
@@ -50,26 +50,26 @@ export const getUsersForWorkspaceTool: Tool = {
       },
       opt_fields: {
         type: "string",
-        description: "Comma-separated list of optional fields to include (e.g., 'name,email,photo,resource_type,workspace_memberships'). Include 'workspace_memberships' to get the is_active flag."
+        description: "Comma-separated list of optional fields to include (recommended: 'name,email,photo,resource_type,workspace_memberships')"
       },
       limit: {
         type: "number",
-        description: "Maximum number of results to return per page (1-100). Default is 50 for manual pagination and 100 for auto_paginate=true.",
+        description: "Maximum number of results to return per page (1-100). This parameter is now strictly enforced. Defaults to 20 for manual pagination, 100 for auto-pagination.",
         minimum: 1,
         maximum: 100
       },
       offset: {
         type: "string",
-        description: "Pagination token from previous response's pagination_info.next_offset. Use this to get the next page of results."
+        description: "Pagination token from previous response's pagination_info.next_offset. Only valid tokens starting with 'eyJ' will be used."
       },
       auto_paginate: {
         type: "boolean",
-        description: "Controls pagination behavior: if true, fetches all pages automatically (limited by max_pages); if false, returns a single page with pagination_info for manual paging.",
+        description: "If true, automatically fetches all pages and combines results (limited by max_pages). If false, returns a single page with pagination_info object with a next_offset token for manual pagination.",
         default: false
       },
       max_pages: {
         type: "number",
-        description: "Maximum number of pages to fetch when auto_paginate=true (protection against fetching too many pages)",
+        description: "Maximum number of pages to fetch when auto_paginate is true to prevent excessive API calls",
         default: 10
       }
     },
@@ -77,34 +77,33 @@ export const getUsersForWorkspaceTool: Tool = {
   },
   examples: [
     {
-      name: "Get first page of users in a workspace",
+      name: "Get limited number of users with manual pagination",
       input: {
         workspace_id: "12345678",
-        limit: 20,
         opt_fields: "name,email,photo,workspace_memberships",
+        limit: 20,
         auto_paginate: false
       },
-      description: "Returns the first 20 users from the workspace with pagination information for getting subsequent pages"
+      description: "Returns 20 users and includes pagination_info object with next_offset token"
     },
     {
-      name: "Get next page of users",
+      name: "Get all users with automatic pagination",
       input: {
         workspace_id: "12345678",
-        limit: 20,
-        offset: "eyJ0eXAiOiJKV1QiLCJhbGciOi...",
-        opt_fields: "name,email,photo"
-      },
-      description: "Uses an offset token from a previous response to get the next page of results"
-    },
-    {
-      name: "Get all active users",
-      input: {
-        workspace_id: "12345678",
-        opt_fields: "name,email,workspace_memberships",
+        opt_fields: "name,email",
         auto_paginate: true,
         max_pages: 5
       },
-      description: "Automatically fetches all users (up to max_pages limit) and returns them as a single list"
+      description: "Returns all users (up to max_pages*100) in a single combined array"
+    },
+    {
+      name: "Continue pagination from previous response",
+      input: {
+        workspace_id: "12345678",
+        offset: "eyJ0eXAiOiJKV1QiLCJhbGci...",
+        limit: 20
+      },
+      description: "Returns the next page of results starting from the provided offset token"
     }
   ]
 }; 
