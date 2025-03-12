@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved
 
 
+## [1.8.5] - 2024-07-16
+
+### Fixed
+- Fixed asana_get_teams_for_user to use default workspace when user_gid is 'me'
+
+
 ## [1.8.4] - 2024-07-16
 
 ### Fixed
