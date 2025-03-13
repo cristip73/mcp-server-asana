@@ -10,6 +10,10 @@ export const searchProjectsTool: Tool = {
         type: "string",
         description: "The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)"
       },
+      team: {
+        type: "string",
+        description: "The team to filter projects on"
+      },
       name_pattern: {
         type: "string",
         description: "Regular expression pattern to match project names"
@@ -18,6 +22,16 @@ export const searchProjectsTool: Tool = {
         type: "boolean",
         description: "Only return archived projects",
         default: false
+      },
+      limit: {
+        type: "number",
+        description: "Results per page (1-100)",
+        minimum: 1,
+        maximum: 100
+      },
+      offset: {
+        type: "string",
+        description: "Pagination offset token"
       },
       opt_fields: {
         type: "string",

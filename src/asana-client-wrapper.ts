@@ -111,23 +111,88 @@ export class AsanaClientWrapper {
   }
 
   async searchProjects(workspace: string | undefined, namePattern: string, archived: boolean = false, opts: any = {}) {
-    // Use default workspace if not specified and available
-    if (!workspace && this.defaultWorkspaceId) {
-      workspace = this.defaultWorkspaceId;
+    try {
+      // Extrage parametrii noi
+      const { 
+        team,
+        limit,
+        offset,
+        auto_paginate = false, 
+        max_pages = 10,
+        opt_fields,
+        ...otherOpts
+      } = opts;
+      
+      // Pregătește obiectul de parametri pentru cerere
+      const searchParams: any = {
+        ...otherOpts,
+        archived
+      };
+      
+      // Adaugă workspace dacă este furnizat sau folosește cel implicit
+      if (workspace) {
+        searchParams.workspace = workspace;
+      } else if (this.defaultWorkspaceId) {
+        searchParams.workspace = this.defaultWorkspaceId;
+      }
+      
+      // Adaugă team dacă este furnizat
+      if (team) {
+        searchParams.team = team;
+      }
+      
+      // Verifică dacă avem cel puțin un parametru de filtrare (workspace sau team)
+      if (!searchParams.workspace && !searchParams.team) {
+        throw new Error("No workspace or team specified and no default workspace ID set");
+      }
+      
+      // Adaugă câmpuri opționale dacă sunt furnizate
+      if (opt_fields) {
+        searchParams.opt_fields = opt_fields;
+      } else {
+        searchParams.opt_fields = 'name,archived,created_at,modified_at,public,current_status';
+      }
+      
+      // Adaugă parametri de paginare
+      if (limit !== undefined) {
+        // Asigură-te că limita este între 1 și 100
+        searchParams.limit = Math.min(Math.max(1, Number(limit)), 100);
+      }
+      if (offset) {
+        searchParams.offset = offset;
+      }
+      
+      // Folosește handlePaginatedResults pentru a gestiona paginarea
+      const projects = await this.handlePaginatedResults(
+        // Funcția de fetch inițială
+        () => this.projects.getProjects(searchParams),
+        // Funcția de fetch pentru pagina următoare
+        (nextOffset) => this.projects.getProjects({ ...searchParams, offset: nextOffset }),
+        // Opțiuni de paginare
+        { auto_paginate, max_pages }
+      );
+      
+      // Filtrează proiectele pe baza pattern-ului de nume
+      if (namePattern) {
+        const pattern = new RegExp(namePattern, 'i');
+        return projects.filter((project: any) => pattern.test(project.name));
+      }
+      
+      return projects;
+    } catch (error: any) {
+      console.error(`Error searching projects: ${error.message}`);
+      
+      // Adaugă gestionare detaliată a erorilor pentru situații comune
+      if (error.message?.includes('Bad Request')) {
+        if (opts.limit && (opts.limit < 1 || opts.limit > 100)) {
+          throw new Error(`Invalid limit parameter: ${opts.limit}. Limit must be between 1 and 100.`);
+        }
+        
+        throw new Error(`Error searching projects: ${error.message}. Check that all parameters are valid.`);
+      }
+      
+      throw error;
     }
-    
-    if (!workspace) {
-      throw new Error("No workspace specified and no default workspace ID set");
-    }
-    
-    const response = await this.projects.getProjectsForWorkspace(workspace, {
-      archived,
-      opt_fields: opts.opt_fields || 'name,archived,created_at,modified_at,public,current_status',
-    });
-    
-    // Filter projects based on the name pattern
-    const pattern = new RegExp(namePattern, 'i');
-    return response.data.filter((project: any) => pattern.test(project.name));
   }
 
   async searchTasks(workspace: string | undefined, searchOpts: any = {}) {

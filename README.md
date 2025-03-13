@@ -96,12 +96,16 @@ asana_update_task({
 2. `asana_search_projects`
     * Search for projects in Asana using name pattern matching
     * Required input:
-        * workspace (string): The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)
         * name_pattern (string): Regular expression pattern to match project names
     * Optional input:
+        * workspace (string): The workspace to search in (optional if DEFAULT_WORKSPACE_ID is set)
+        * team (string): The team to filter projects on
         * archived (boolean): Only return archived projects (default: false)
+        * limit (number): Results per page (1-100)
+        * offset (string): Pagination offset token
         * opt_fields (string): Comma-separated list of optional fields to include
     * Returns: List of matching projects
+    * Note: Either workspace or team must be specified if DEFAULT_WORKSPACE_ID is not set
 3. `asana_search_tasks`
     * Search tasks in a workspace with advanced filtering options
     * Required input:
