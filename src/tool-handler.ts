@@ -14,7 +14,8 @@ import {
   createProjectForWorkspaceTool,
   updateProjectTool,
   addMembersForProjectTool,
-  addFollowersForProjectTool
+  addFollowersForProjectTool,
+  reorderSectionsTool
 } from './tools/project-tools.js';
 import { 
   getProjectStatusTool,
@@ -61,6 +62,7 @@ export const tools: Tool[] = [
   createSectionForProjectTool,
   createProjectForWorkspaceTool,
   updateProjectTool,
+  reorderSectionsTool,
   getProjectStatusTool,
   getProjectStatusesForProjectTool,
   createProjectStatusTool,
@@ -492,6 +494,22 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_add_tags_to_task": {
             const { task_id, tag_ids } = args;
             const response = await asanaClient.addTagsToTask(task_id, tag_ids);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_reorder_sections": {
+            const { project_id, section_id, before_section_id, after_section_id } = args;
+            const response = await asanaClient.reorderSections(project_id, section_id, before_section_id, after_section_id);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_users_for_workspace": {
+            const { workspace_id, ...opts } = args;
+            const response = await asanaClient.getUsersForWorkspace(workspace_id || undefined, opts);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };

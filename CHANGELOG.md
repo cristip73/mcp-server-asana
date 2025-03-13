@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Improved
+- Corectarea implementării pentru `asana_reorder_sections` pentru a respecta exact API-ul Asana
 
 
 ## [1.8.5] - 2024-07-16
@@ -85,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified tool-handler.ts to normalize array parameters at the request level
 - Updated all methods in AsanaClientWrapper that work with arrays to ensure consistent parameter handling
 - Implemented new addTagsToTask method with consistent array parameter handling
+- Added `asana_reorder_sections` functionality to allow reordering sections within a project
 
 ### Fixed
 - Fixed issue with inconsistent handling of array parameters

@@ -320,3 +320,30 @@ export const addFollowersForProjectTool: Tool = {
     required: ["project_id", "followers"]
   }
 };
+
+export const reorderSectionsTool: Tool = {
+  name: "asana_reorder_sections",
+  description: "Reorder a section within a project by specifying its position relative to another section",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "The project ID containing the sections to reorder"
+      },
+      section_id: {
+        type: "string",
+        description: "The section GID to reorder"
+      },
+      before_section_id: {
+        type: "string",
+        description: "Insert the section before this section GID. Use null for first position."
+      },
+      after_section_id: {
+        type: "string",
+        description: "Insert the section after this section GID. Use null for last position."
+      }
+    },
+    required: ["project_id", "section_id"]
+  }
+};

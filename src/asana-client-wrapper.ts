@@ -1332,4 +1332,91 @@ export class AsanaClientWrapper {
       throw error;
     }
   }
+
+  // Metodă pentru reordonarea unei secțiuni într-un proiect
+  async reorderSections(projectId: string, sectionId: string, beforeSectionId?: string | null, afterSectionId?: string | null) {
+    try {
+      if (!sectionId) {
+        throw new Error("Section ID cannot be empty");
+      }
+
+      // Nu putem specifica atât before_section cât și after_section simultan
+      if (beforeSectionId !== undefined && beforeSectionId !== null && afterSectionId !== undefined && afterSectionId !== null) {
+        throw new Error("Cannot specify both before_section and after_section. Choose one.");
+      }
+
+      const body: any = {
+        data: {
+          section: sectionId
+        }
+      };
+
+      // Adăugăm before_section sau after_section la body, dacă sunt specificate
+      if (beforeSectionId !== undefined) {
+        body.data.before_section = beforeSectionId === null ? null : beforeSectionId;
+      } else if (afterSectionId !== undefined) {
+        body.data.after_section = afterSectionId === null ? null : afterSectionId;
+      } else {
+        throw new Error("Must specify either before_section_id or after_section_id");
+      }
+
+      // Apelăm API-ul Asana pentru a muta secțiunea
+      const response = await this.sections.insertSectionForProject(projectId, body);
+      
+      return {
+        project_id: projectId,
+        section_id: sectionId,
+        status: "success",
+        before_section: beforeSectionId,
+        after_section: afterSectionId,
+        result: response.data
+      };
+    } catch (error) {
+      console.error(`Error reordering section for project: ${error}`);
+      
+      // Dacă metoda standard eșuează, încercăm metoda alternativă cu callApi direct
+      try {
+        const client = Asana.ApiClient.instance;
+        
+        const body: any = {
+          data: {
+            section: sectionId
+          }
+        };
+
+        // Adăugăm before_section sau after_section la body, dacă sunt specificate
+        if (beforeSectionId !== undefined) {
+          body.data.before_section = beforeSectionId === null ? null : beforeSectionId;
+        } else if (afterSectionId !== undefined) {
+          body.data.after_section = afterSectionId === null ? null : afterSectionId;
+        }
+
+        const response = await client.callApi(
+          `/projects/${projectId}/sections/insert`,
+          'POST',
+          { project_gid: projectId },
+          {},
+          {},
+          {},
+          body,
+          ['token'],
+          ['application/json'],
+          ['application/json'],
+          'Blob'
+        );
+        
+        return {
+          project_id: projectId,
+          section_id: sectionId,
+          status: "success (fallback method)",
+          before_section: beforeSectionId,
+          after_section: afterSectionId,
+          result: response.data
+        };
+      } catch (fallbackError) {
+        console.error("Error in fallback method:", fallbackError);
+        throw error; // Aruncăm eroarea originală
+      }
+    }
+  }
 }
