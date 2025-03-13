@@ -362,8 +362,17 @@ export class AsanaClientWrapper {
   }
 
   async getProjectTaskCounts(projectId: string, opts: any = {}) {
-    // Only include opts if opt_fields was actually provided
-    const options = opts.opt_fields ? opts : {};
+    // Ensure we always include essential opt_fields for task counts
+    // See: https://developers.asana.com/reference/gettaskcountsforproject
+    const options = {
+      opt_fields: 'num_tasks,num_incomplete_tasks,num_completed_tasks,num_milestones,num_incomplete_milestones,num_completed_milestones'
+    };
+    
+    // If caller provided specific opt_fields, use those instead
+    if (opts.opt_fields) {
+      options.opt_fields = opts.opt_fields;
+    }
+    
     const response = await this.projects.getTaskCountsForProject(projectId, options);
     return response.data;
   }
