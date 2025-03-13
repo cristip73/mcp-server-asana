@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Improved
+
+
+## [1.8.9] - 2024-07-18
+
+### Improved
 - Corectarea implementării pentru `asana_reorder_sections` pentru a respecta exact API-ul Asana
 - Enhanced `asana_search_projects` to use the more efficient `/projects` endpoint with support for team filtering, pagination parameters (limit, offset), and better error handling
 
