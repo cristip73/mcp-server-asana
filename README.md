@@ -1,6 +1,7 @@
 # MCP Server for Asana
 
 [![npm version](https://badge.fury.io/js/%40roychri%2Fmcp-server-asana.svg)](https://www.npmjs.com/package/@roychri/mcp-server-asana)
+[![smithery badge](https://smithery.ai/badge/@roychri/mcp-server-asana)](https://smithery.ai/server/@roychri/mcp-server-asana)
 
 This Model Context Protocol server implementation of Asana allows you
 to talk to Asana API from MCP Client such as Anthropic's Claude
@@ -237,6 +238,13 @@ None
 
 ## Setup
 
+### Installing via Smithery
+
+To install mcp-server-asana for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@roychri/mcp-server-asana):
+
+```bash
+npx -y @smithery/cli install @roychri/mcp-server-asana --client claude
+```
 
 1. **Create an Asana account**:
 
