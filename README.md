@@ -347,6 +347,24 @@ asana_update_task({
         * auto_paginate (boolean): Whether to automatically fetch all pages
         * max_pages (integer): Maximum number of pages to fetch when auto_paginate is true
     * Returns: List of users in the workspace
+30. `asana_get_project_hierarchy`
+    * Get the complete hierarchical structure of an Asana project, including sections, tasks, and subtasks
+    * Required input:
+        * project_id (string): The project ID to get hierarchy for
+    * Optional input:
+        * include_completed_tasks (boolean): Include completed tasks (default: false)
+        * include_subtasks (boolean): Include subtasks for each task (default: true)
+        * include_completed_subtasks (boolean): Include completed subtasks (default: follows include_completed_tasks)
+        * max_subtask_depth (number): Maximum depth of subtasks to retrieve (default: 1)
+        * opt_fields_tasks (string): Optional fields for tasks
+        * opt_fields_subtasks (string): Optional fields for subtasks
+        * opt_fields_sections (string): Optional fields for sections
+        * opt_fields_project (string): Optional fields for project
+        * limit (number): Max results per page (1-100)
+        * offset (string): Pagination token from previous response
+        * auto_paginate (boolean): Whether to automatically fetch all pages
+        * max_pages (number): Maximum pages to fetch when auto_paginate is true
+    * Returns: Hierarchical project structure with statistics
 
 ## Prompts
 

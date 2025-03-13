@@ -505,6 +505,7 @@ export const getProjectHierarchyTool: Tool = {
   "- For all data: {project_id:\"123\", auto_paginate:true}\n" +
   "- For first page: {project_id:\"123\", limit:10}\n" +
   "- For next page: {project_id:\"123\", limit:10, offset:\"eyJ0a...\"}\n" +
+  "- For deep subtasks: {project_id:\"123\", include_subtasks:true, max_subtask_depth:3}\n" +
   "Note: offset must be a token from previous response (section.pagination_info.next_offset)",
   inputSchema: {
     type: "object",
@@ -524,6 +525,13 @@ export const getProjectHierarchyTool: Tool = {
       include_completed_subtasks: {
         type: "boolean",
         description: "Include completed subtasks (default: follows include_completed_tasks)"
+      },
+      max_subtask_depth: {
+        type: "number",
+        description: "Maximum depth of subtasks to retrieve (default: 1, meaning only direct subtasks)",
+        minimum: 1,
+        maximum: 10,
+        default: 1
       },
       opt_fields_tasks: {
         type: "string",

@@ -161,6 +161,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Specify the repo url in the package.json so it shows on npmjs.com
 - Use standard format for bin location
 
+## 1.8.6 (2024-06-XX)
+
+### Features
+- Extended `asana_get_project_hierarchy` to include recursive subtasks with customizable depth and detailed statistics
+- Added new parameter `max_subtask_depth` to control how many levels of subtasks are retrieved
+- Added performance optimizations for large project hierarchies
+- Included statistics in the response (total_sections, total_tasks, total_subtasks)
+
 [unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.3..HEAD
 [1.6.3]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.1...v1.6.2

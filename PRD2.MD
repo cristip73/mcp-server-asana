@@ -245,7 +245,7 @@ https://developers.asana.com/reference/addtagfortask
 
   - **AI usage guidance to include:** "For categorizing tasks, use `asana_add_tags_to_task` with an array of tag IDs (get available tags with `asana_get_tags_for_workspace`)."
 
-### 3.3 Complete Project Hierarchy
+### 3.3 ✅ Complete Project Hierarchy
 - **Priority: High**
 - **Description**: Extending the `asana_get_project_hierarchy` function to include subtasks
 - **Justification**: Provides a complete picture of the project structure

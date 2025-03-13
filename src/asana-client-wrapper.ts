@@ -805,8 +805,16 @@ export class AsanaClientWrapper {
         offset,
         include_subtasks = true,
         include_completed_subtasks,
+        max_subtask_depth = 1,
         ...otherOpts 
       } = opts;
+
+      // Initialize stats object for tracking counts
+      const stats = {
+        total_sections: 0,
+        total_tasks: 0,
+        total_subtasks: 0
+      };
 
       // Pasul 1: Obține informații despre proiect
       const projectFields = "name,gid" + (opts.opt_fields_project ? `,${opts.opt_fields_project}` : "");
@@ -816,11 +824,15 @@ export class AsanaClientWrapper {
       const sectionFields = "name,gid" + (opts.opt_fields_sections ? `,${opts.opt_fields_sections}` : "");
       const sections = await this.getProjectSections(projectId, { opt_fields: sectionFields });
       
+      // Update stats with section count
+      stats.total_sections = sections ? sections.length : 0;
+      
       // Verifică dacă avem secțiuni
       if (!sections || sections.length === 0) {
         return {
           project: project,
-          sections: []
+          sections: [],
+          stats
         };
       }
       
@@ -888,13 +900,16 @@ export class AsanaClientWrapper {
           }
         }
         
+        // Update total tasks count
+        stats.total_tasks += tasks ? tasks.length : 0;
+        
         // Pasul 4: Pentru fiecare task, obține subtask-urile dacă acestea există și dacă utilizatorul dorește
         const tasksWithSubtasks = await Promise.all(tasks.map(async (task: any) => {
           // Verifică dacă avem nevoie de subtask-uri și dacă task-ul are subtask-uri
           if (include_subtasks && task.num_subtasks && task.num_subtasks > 0) {
             try {
               // Pregătim câmpurile pentru subtask-uri
-              const subtaskFields = "name,gid,completed,resource_subtype" + 
+              const subtaskFields = "name,gid,completed,resource_subtype,num_subtasks" + 
                 (opts.opt_fields_subtasks ? `,${opts.opt_fields_subtasks}` : 
                  opts.opt_fields_tasks ? `,${opts.opt_fields_tasks}` : "");
               
@@ -949,6 +964,22 @@ export class AsanaClientWrapper {
                 }
               }
               
+              // Update subtasks count
+              stats.total_subtasks += subtasks ? subtasks.length : 0;
+              
+              // If max_subtask_depth > 1, recursively fetch deeper subtasks
+              if (max_subtask_depth > 1 && subtasks && subtasks.length > 0) {
+                await this.fetchSubtasksRecursively(
+                  subtasks,
+                  max_subtask_depth,
+                  1, // Current depth
+                  subtaskOpts,
+                  auto_paginate,
+                  max_pages,
+                  stats
+                );
+              }
+              
               return { ...task, subtasks };
             } catch (error) {
               console.error(`Error fetching subtasks for task ${task.gid}:`, error);
@@ -965,6 +996,7 @@ export class AsanaClientWrapper {
       const result = {
         project: project,
         sections: sectionsWithTasks,
+        stats, // Include the statistics in the result
         pagination_info: {
           auto_paginate_used: auto_paginate,
           effective_limit: effectiveLimit,
@@ -982,6 +1014,85 @@ export class AsanaClientWrapper {
       } else {
         console.error("Error in getProjectHierarchy:", error);
         throw error;
+      }
+    }
+  }
+  
+  // Helper method to recursively fetch subtasks to a specified depth
+  private async fetchSubtasksRecursively(
+    tasks: any[],
+    maxDepth: number,
+    currentDepth: number,
+    opts: any,
+    auto_paginate: boolean,
+    max_pages: number,
+    stats: { total_subtasks: number }
+  ) {
+    // If we've reached the maximum depth, stop recursion
+    if (currentDepth >= maxDepth) {
+      return;
+    }
+    
+    // For each task at the current depth
+    for (const task of tasks) {
+      // Skip if task has no subtasks
+      if (!task.num_subtasks || task.num_subtasks <= 0) {
+        continue;
+      }
+      
+      try {
+        // Fetch subtasks for this task
+        let subtasks;
+        if (auto_paginate) {
+          // With auto pagination
+          subtasks = await this.handlePaginatedResults(
+            // Initial fetch function
+            () => this.tasks.getSubtasksForTask(task.gid, opts),
+            // Next page fetch function
+            (nextOffset) => this.tasks.getSubtasksForTask(task.gid, { ...opts, offset: nextOffset }),
+            // Pagination options
+            { auto_paginate, max_pages }
+          );
+        } else {
+          // Without auto pagination, just get one page
+          const response = await this.tasks.getSubtasksForTask(task.gid, opts);
+          subtasks = response.data || [];
+          
+          // Add pagination info to the task
+          if (response.next_page) {
+            task.subtasks_pagination_info = {
+              has_more: true,
+              next_offset: response.next_page.offset
+            };
+          } else {
+            task.subtasks_pagination_info = {
+              has_more: false
+            };
+          }
+        }
+        
+        // Update subtasks count
+        stats.total_subtasks += subtasks ? subtasks.length : 0;
+        
+        // Add subtasks to the current task
+        task.subtasks = subtasks;
+        
+        // Recursively fetch the next level of subtasks
+        if (subtasks && subtasks.length > 0) {
+          await this.fetchSubtasksRecursively(
+            subtasks,
+            maxDepth,
+            currentDepth + 1,
+            opts,
+            auto_paginate,
+            max_pages,
+            stats
+          );
+        }
+      } catch (error) {
+        console.error(`Error recursively fetching subtasks for task ${task.gid}:`, error);
+        task.subtasks = [];
+        task.subtasks_error = "Error fetching subtasks recursively";
       }
     }
   }
