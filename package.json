@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.9.2-beta.5",
+  "version": "1.9.3",
   "description": "MCP Server for Asana API",
   "repository": {
     "type": "git",
