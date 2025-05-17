@@ -1558,11 +1558,9 @@ export class AsanaClientWrapper {
       throw new Error('Attachment does not have a download_url');
     }
 
-    const resolvedDir = path.resolve(outputDir);
-    await fs.promises.mkdir(resolvedDir, { recursive: true });
+    await fs.promises.mkdir(outputDir, { recursive: true });
 
-    const token = Asana.ApiClient.instance.authentications['token'].accessToken;
-    const res = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(downloadUrl);
     if (!res.ok || !res.body) {
       throw new Error(`Failed to download attachment: ${res.status}`);
     }
@@ -1573,7 +1571,7 @@ export class AsanaClientWrapper {
       filename += this.extensionForMime(contentType);
     }
 
-    const filePath = path.join(resolvedDir, filename);
+    const filePath = path.join(outputDir, filename);
     const fileStream = fs.createWriteStream(filePath);
     await pipeline(res.body, fileStream);
 
