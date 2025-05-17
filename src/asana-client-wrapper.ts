@@ -1509,7 +1509,13 @@ export class AsanaClientWrapper {
     const name = fileName || path.basename(filePath);
     const fileStream = fs.createReadStream(filePath);
     form.append('parent', objectId);
-    form.append('file', fileStream, fileType ? { filename: name, contentType: fileType } : name);
+    
+    // Fix pentru eroarea de tipare prin folosirea unei abordări mai simple
+    if (fileType) {
+      form.append('file', fileStream, { filename: name, type: fileType } as any);
+    } else {
+      form.append('file', fileStream, name);
+    }
 
     const token = Asana.ApiClient.instance.authentications['token'].accessToken;
     const response = await fetch('https://app.asana.com/api/1.0/attachments', {
@@ -1523,7 +1529,9 @@ export class AsanaClientWrapper {
     }
 
     const result = await response.json();
-    return result.data;
+    // Am adăugat tipare explicită pentru a rezolva avertismentul TypeScript
+    const typedResult = result as { data: any };
+    return typedResult.data;
   }
 
   private extensionForMime(mime: string): string {
@@ -1550,7 +1558,8 @@ export class AsanaClientWrapper {
       throw new Error('Attachment does not have a download_url');
     }
 
-    await fs.promises.mkdir(outputDir, { recursive: true });
+    const resolvedDir = path.resolve(outputDir);
+    await fs.promises.mkdir(resolvedDir, { recursive: true });
 
     const token = Asana.ApiClient.instance.authentications['token'].accessToken;
     const res = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
@@ -1564,7 +1573,7 @@ export class AsanaClientWrapper {
       filename += this.extensionForMime(contentType);
     }
 
-    const filePath = path.join(outputDir, filename);
+    const filePath = path.join(resolvedDir, filename);
     const fileStream = fs.createWriteStream(filePath);
     await pipeline(res.body, fileStream);
 
