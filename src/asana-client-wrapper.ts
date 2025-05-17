@@ -1542,10 +1542,13 @@ export class AsanaClientWrapper {
     return map[mime] || '';
   }
 
-  async downloadAttachment(attachmentId: string, outputDir: string = 'downloads') {
+  async downloadAttachment(attachmentId: string, outputDir?: string) {
     const fs = await import('fs');
     const path = await import('path');
+    const os = await import('os');
     const { pipeline } = await import('stream/promises');
+
+    outputDir = outputDir || path.join(os.homedir(), 'downloads');
 
     const attachment = await this.getAttachment(attachmentId);
     const downloadUrl = attachment.download_url || attachment.downloadUrl;

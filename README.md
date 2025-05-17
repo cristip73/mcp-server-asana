@@ -395,7 +395,7 @@ asana_update_task({
     * Required input:
         * attachment_gid (string): The attachment GID to download
     * Optional input:
-        * output_dir (string): Directory to save the file (default: ./downloads)
+        * output_dir (string): Directory to save the file (default: ~/downloads)
     * Returns: Path and MIME type of the downloaded file
 
 ## Prompts

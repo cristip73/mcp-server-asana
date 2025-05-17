@@ -68,7 +68,7 @@ export const downloadAttachmentTool: Tool = {
       },
       output_dir: {
         type: "string",
-        description: "Directory to save the file (defaults to ./downloads)"
+        description: "Directory to save the file (defaults to ~/downloads)"
       }
     },
     required: ["attachment_gid"]
