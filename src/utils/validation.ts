@@ -355,6 +355,34 @@ export function validateSectionParameters(toolName: string, params: any): Valida
   };
 }
 
+export function validateAttachmentParameters(toolName: string, params: any): ValidationResult {
+  const errors: string[] = [];
+  let result: ValidationResult;
+
+  switch (toolName) {
+    case 'asana_get_attachments_for_object':
+      result = validateGid(params.object_gid, 'object_gid');
+      if (!result.valid) errors.push(...result.errors);
+      break;
+    case 'asana_upload_attachment_for_object':
+      result = validateGid(params.object_gid, 'object_gid');
+      if (!result.valid) errors.push(...result.errors);
+
+      result = validateString(params.file_path, 'file_path', false);
+      if (!result.valid) errors.push(...result.errors);
+      break;
+    case 'asana_download_attachment':
+      result = validateGid(params.attachment_gid, 'attachment_gid');
+      if (!result.valid) errors.push(...result.errors);
+      break;
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
 /**
  * Funcția principală pentru validarea parametrilor în funcție de operațiune
  * @param toolName Numele uneltei/operațiunii
@@ -377,6 +405,8 @@ export function validateParameters(toolName: string, params: any): ValidationRes
     return validateProjectParameters(toolName, params);
   } else if (toolName.includes('_section_')) {
     return validateSectionParameters(toolName, params);
+  } else if (toolName.includes('_attachment')) {
+    return validateAttachmentParameters(toolName, params);
   }
   
   // Pentru alte operațiuni care nu necesită validări specifice

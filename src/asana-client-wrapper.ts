@@ -9,6 +9,7 @@ export class AsanaClientWrapper {
   private stories: any;
   private projectStatuses: any;
   private tags: any;
+  private attachments: any;
   private sections: any;
   private users: any;
   private teams: any;
@@ -25,6 +26,7 @@ export class AsanaClientWrapper {
     this.stories = new Asana.StoriesApi();
     this.projectStatuses = new Asana.ProjectStatusesApi();
     this.tags = new Asana.TagsApi();
+    this.attachments = new Asana.AttachmentsApi();
     this.sections = new Asana.SectionsApi();
     this.users = new Asana.UsersApi();
     this.teams = new Asana.TeamsApi();
@@ -1483,5 +1485,89 @@ export class AsanaClientWrapper {
         throw error; // Aruncăm eroarea originală
       }
     }
+  }
+
+  async getAttachmentsForObject(objectId: string, opts: any = {}) {
+    const response = await this.attachments.getAttachmentsForObject(objectId, opts);
+    return response.data;
+  }
+
+  async getAttachment(attachmentId: string, opts: any = {}) {
+    const response = await this.attachments.getAttachment(attachmentId, opts);
+    return response.data;
+  }
+
+  async uploadAttachmentForObject(objectId: string, filePath: string, fileName?: string, fileType?: string) {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    const form = new FormData();
+    const name = fileName || path.basename(filePath);
+    const fileStream = fs.createReadStream(filePath);
+    form.append('parent', objectId);
+    form.append('file', fileStream, fileType ? { filename: name, contentType: fileType } : name);
+
+    const token = Asana.ApiClient.instance.authentications['token'].accessToken;
+    const response = await fetch('https://app.asana.com/api/1.0/attachments', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form as any
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${await response.text()}`);
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  private extensionForMime(mime: string): string {
+    const map: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'application/pdf': '.pdf',
+      'text/plain': '.txt',
+      'application/zip': '.zip',
+      'application/json': '.json'
+    };
+    return map[mime] || '';
+  }
+
+  async downloadAttachment(attachmentId: string, outputDir: string = 'downloads') {
+    const fs = await import('fs');
+    const path = await import('path');
+    const { pipeline } = await import('stream/promises');
+
+    const attachment = await this.getAttachment(attachmentId);
+    const downloadUrl = attachment.download_url || attachment.downloadUrl;
+    if (!downloadUrl) {
+      throw new Error('Attachment does not have a download_url');
+    }
+
+    await fs.promises.mkdir(outputDir, { recursive: true });
+
+    const token = Asana.ApiClient.instance.authentications['token'].accessToken;
+    const res = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok || !res.body) {
+      throw new Error(`Failed to download attachment: ${res.status}`);
+    }
+
+    let filename: string = attachment.name || attachment.gid;
+    const contentType = res.headers.get('content-type') || attachment.mime_type;
+    if (!path.extname(filename) && contentType) {
+      filename += this.extensionForMime(contentType);
+    }
+
+    const filePath = path.join(outputDir, filename);
+    const fileStream = fs.createWriteStream(filePath);
+    await pipeline(res.body, fileStream);
+
+    return { attachment_id: attachmentId, file_path: filePath, mime_type: contentType };
   }
 }

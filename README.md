@@ -370,6 +370,34 @@ asana_update_task({
         * max_pages (number): Maximum pages to fetch when auto_paginate is true
     * Returns: Hierarchical project structure with statistics
 
+31. `asana_get_attachments_for_object`
+    * List attachments for a specific object (task, project, etc.)
+    * Required input:
+        * object_gid (string): The object GID to retrieve attachments for
+    * Optional input:
+        * limit (number): Results per page (1-100)
+        * offset (string): Pagination offset token
+        * opt_fields (string): Comma-separated list of optional fields to include
+    * Returns: List of attachments
+
+32. `asana_upload_attachment_for_object`
+    * Upload a local file as attachment to a task or other object
+    * Required input:
+        * object_gid (string): The object GID to attach the file to
+        * file_path (string): Path to the local file to upload
+    * Optional input:
+        * file_name (string): Custom file name
+        * file_type (string): MIME type of the uploaded file
+    * Returns: Metadata of the uploaded attachment
+
+33. `asana_download_attachment`
+    * Download an attachment to a local directory
+    * Required input:
+        * attachment_gid (string): The attachment GID to download
+    * Optional input:
+        * output_dir (string): Directory to save the file (default: ./downloads)
+    * Returns: Path and MIME type of the downloaded file
+
 ## Prompts
 
 1. `task-summary`

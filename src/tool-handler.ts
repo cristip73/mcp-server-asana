@@ -47,11 +47,16 @@ import {
   getStoriesForTaskTool,
   createTaskStoryTool
 } from './tools/story-tools.js';
-import { 
+import {
   getTeamsForUserTool,
   getTeamsForWorkspaceTool,
-  getUsersForWorkspaceTool 
+  getUsersForWorkspaceTool
 } from './tools/user-tools.js';
+import {
+  getAttachmentsForObjectTool,
+  uploadAttachmentForObjectTool,
+  downloadAttachmentTool
+} from './tools/attachment-tools.js';
 
 export const tools: Tool[] = [
   listWorkspacesTool,
@@ -91,7 +96,10 @@ export const tools: Tool[] = [
   getTeamsForWorkspaceTool,
   addMembersForProjectTool,
   addFollowersForProjectTool,
-  getUsersForWorkspaceTool
+  getUsersForWorkspaceTool,
+  getAttachmentsForObjectTool,
+  uploadAttachmentForObjectTool,
+  downloadAttachmentTool
 ];
 
 // Exportăm și ca list_of_tools pentru compatibilitate cu index.ts
@@ -510,6 +518,30 @@ export function tool_handler(asanaClient: AsanaClientWrapper): (request: CallToo
           case "asana_get_users_for_workspace": {
             const { workspace_id, ...opts } = args;
             const response = await asanaClient.getUsersForWorkspace(workspace_id || undefined, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_get_attachments_for_object": {
+            const { object_gid, ...opts } = args;
+            const response = await asanaClient.getAttachmentsForObject(object_gid, opts);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_upload_attachment_for_object": {
+            const { object_gid, file_path, file_name, file_type } = args;
+            const response = await asanaClient.uploadAttachmentForObject(object_gid, file_path, file_name, file_type);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "asana_download_attachment": {
+            const { attachment_gid, output_dir } = args;
+            const response = await asanaClient.downloadAttachment(attachment_gid, output_dir);
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
