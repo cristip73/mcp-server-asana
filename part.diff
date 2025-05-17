@@ -1,0 +1,50 @@
+diff --git a/src/asana-client-wrapper.ts b/src/asana-client-wrapper.ts
+index 11a1299..4a0f650 100644
+--- a/src/asana-client-wrapper.ts
++++ b/src/asana-client-wrapper.ts
+@@ -1530,44 +1530,43 @@ export class AsanaClientWrapper {
+     const map: Record<string, string> = {
+       'image/jpeg': '.jpg',
+       'image/png': '.png',
+       'image/gif': '.gif',
+       'application/pdf': '.pdf',
+       'text/plain': '.txt',
+       'application/zip': '.zip',
+       'application/json': '.json'
+     };
+     return map[mime] || '';
+   }
+ 
+   async downloadAttachment(attachmentId: string, outputDir: string = 'downloads') {
+     const fs = await import('fs');
+     const path = await import('path');
+     const { pipeline } = await import('stream/promises');
+ 
+     const attachment = await this.getAttachment(attachmentId);
+     const downloadUrl = attachment.download_url || attachment.downloadUrl;
+     if (!downloadUrl) {
+       throw new Error('Attachment does not have a download_url');
+     }
+ 
+     await fs.promises.mkdir(outputDir, { recursive: true });
+ 
+-    const token = Asana.ApiClient.instance.authentications['token'].accessToken;
+-    const res = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
++    const res = await fetch(downloadUrl);
+     if (!res.ok || !res.body) {
+       throw new Error(`Failed to download attachment: ${res.status}`);
+     }
+ 
+     let filename: string = attachment.name || attachment.gid;
+     const contentType = res.headers.get('content-type') || attachment.mime_type;
+     if (!path.extname(filename) && contentType) {
+       filename += this.extensionForMime(contentType);
+     }
+ 
+     const filePath = path.join(outputDir, filename);
+     const fileStream = fs.createWriteStream(filePath);
+     await pipeline(res.body, fileStream);
+ 
+     return { attachment_id: attachmentId, file_path: filePath, mime_type: contentType };
+   }
+ }

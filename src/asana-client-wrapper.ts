@@ -1507,15 +1507,10 @@ export class AsanaClientWrapper {
 
     const form = new FormData();
     const name = fileName || path.basename(filePath);
-    const fileStream = fs.createReadStream(filePath);
+    const buffer = await fs.promises.readFile(filePath);
+    const file = new File([buffer], name, { type: fileType || 'application/octet-stream' });
     form.append('parent', objectId);
-    
-    // Fix pentru eroarea de tipare prin folosirea unei abordări mai simple
-    if (fileType) {
-      form.append('file', fileStream, { filename: name, type: fileType } as any);
-    } else {
-      form.append('file', fileStream, name);
-    }
+    form.append('file', file);
 
     const token = Asana.ApiClient.instance.authentications['token'].accessToken;
     const response = await fetch('https://app.asana.com/api/1.0/attachments', {
