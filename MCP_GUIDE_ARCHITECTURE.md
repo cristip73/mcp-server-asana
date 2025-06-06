@@ -38,13 +38,13 @@ src/
 #### a. Entry Point (index.ts)
 - Server initialization
 - Environment configuration
-- Transport setup (typically stdio)
+- Transport setup (SSE in this server)
 - Error handling
 - Request handler registration
 
 ```typescript
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SseServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { tool_handler, list_of_tools } from './tool-handler.js';
 import { createPromptHandlers } from './prompt-handler.js';
 import { ClientWrapper } from './client-wrapper.js';
@@ -73,7 +73,7 @@ async function main() {
   server.setRequestHandler(ListPromptsRequestSchema, promptHandlers.listPrompts);
   server.setRequestHandler(GetPromptRequestSchema, promptHandlers.getPrompt);
   
-  const transport = new StdioServerTransport();
+  const transport = new SseServerTransport();
   await server.connect(transport);
 }
 ```
