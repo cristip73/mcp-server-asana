@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { VERSION } from './version.js';
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SseServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { tool_handler, list_of_tools } from './tool-handler.js';
 import {
   CallToolRequestSchema,
@@ -72,11 +72,11 @@ async function main() {
     };
   });
 
-  const transport = new StdioServerTransport();
+  const transport = new SseServerTransport();
   console.error("Connecting server to transport...");
   await server.connect(transport);
 
-  console.error("Asana MCP Server running on stdio");
+  console.error("Asana MCP Server running on SSE");
 }
 
 main().catch((error) => {
