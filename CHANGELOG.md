@@ -13,6 +13,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved
 
 
+## [2.0.0] - 2024-12-23
+
+### Major Release - Stable STDIO Variant
+
+This release marks a major stable version with comprehensive MCP STDIO implementation.
+
+### Added
+- Stable STDIO-based MCP server implementation
+- Complete Asana API integration with all major features
+- Full attachment support (upload, download, list)
+- Project hierarchy management with recursive subtasks
+- Comprehensive custom fields support
+- Advanced task search and filtering capabilities
+- Project status management
+- Team and workspace management
+- Tag-based task organization
+- Section management within projects
+
+### Improved
+- Enhanced error handling with detailed messages
+- Streamlined pagination across all endpoints
+- Better parameter validation and normalization
+- Comprehensive documentation and examples
+- Performance optimizations for large datasets
+
+### Breaking Changes
+- This is a major version release with potential breaking changes
+- Minimum Node.js version requirements may have changed
+- Some API response formats may have been updated
+
 ## [1.8.9] - 2024-07-18
 
 ### Improved
@@ -177,7 +207,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added performance optimizations for large project hierarchies
 - Included statistics in the response (total_sections, total_tasks, total_subtasks)
 
-[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.3..HEAD
+[unreleased]: https://github.com/cristip73/mcp-server-asana/compare/v2.0.0..HEAD
+[2.0.0]: https://github.com/cristip73/mcp-server-asana/compare/v1.8.9...v2.0.0
+[1.8.9]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.3...v1.8.9
 [1.6.3]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/cristip73/mcp-server-asana/compare/v1.6.0...v1.6.1
